@@ -1,0 +1,6 @@
+requests>=2.31.0
+browser-cookie3>=0.19.1
+pycryptodome>=3.20.0
+pyobjc-framework-Cocoa>=10.0
+pyobjc-framework-WebKit>=10.0
+py2app>=0.28.6

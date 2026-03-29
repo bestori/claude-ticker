@@ -1,0 +1,10 @@
+# Runtime deps needed by scraper.py - must be importable even though calls are mocked
+requests>=2.31.0
+browser-cookie3>=0.19.1
+pycryptodome>=3.20.0
+
+# Test runner
+pytest>=8.0.0
+
+# Linter / formatter
+ruff>=0.4.0
