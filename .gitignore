@@ -1,0 +1,36 @@
+# Claude Code internal data
+.claude/
+
+# Build artifacts
+build/
+dist/
+*.egg-info/
+
+# Python bytecode
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# macOS
+.DS_Store
+
+# py2app
+*.app
+
+# Test / coverage
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Ruff cache
+.ruff_cache/
+
+# Editor
+.vscode/
+.idea/
+*.swp

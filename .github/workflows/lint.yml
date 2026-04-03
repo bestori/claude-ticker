@@ -1,0 +1,45 @@
+name: Lint & Test
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+    branches: ["**"]
+
+jobs:
+  lint-and-test:
+    name: Python ${{ matrix.python-version }}
+    runs-on: macos-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.12"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Cache pip
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: pip-${{ matrix.python-version }}-${{ hashFiles('requirements-dev.txt') }}
+          restore-keys: pip-${{ matrix.python-version }}-
+
+      - name: Install dev dependencies
+        # requirements-dev.txt only - deliberately excludes pyobjc and py2app
+        # (macOS framework libs that slow CI and are not needed for unit tests)
+        run: pip install -r requirements-dev.txt
+
+      - name: Lint - ruff check
+        run: ruff check .
+
+      - name: Lint - ruff format (check only)
+        run: ruff format --check .
+
+      - name: Run tests
+        run: pytest tests/ -v --tb=short
