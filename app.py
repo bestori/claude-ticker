@@ -41,10 +41,10 @@ HTML = """\
 }
 
 html,body{
-  width:300px;height:290px;overflow:hidden;
+  width:320px;height:290px;overflow:hidden;
   background:var(--bg);
   font-family:-apple-system,"SF Pro Text",BlinkMacSystemFont,sans-serif;
-  color:var(--text);font-size:13px;
+  color:var(--text);font-size:14px;
   -webkit-font-smoothing:antialiased;
   user-select:none;-webkit-user-select:none;
 }
@@ -52,23 +52,23 @@ html,body{
 .wrap{padding:14px 14px 12px;display:flex;flex-direction:column;gap:9px;height:100%}
 
 /* ── header ── */
-.hdr{display:flex;align-items:center;gap:8px;font-size:14px;font-weight:600}
+.hdr{display:flex;align-items:center;gap:8px;font-size:16px;font-weight:600}
 .logo{
-  width:22px;height:22px;border-radius:6px;
+  width:24px;height:24px;border-radius:6px;
   background:linear-gradient(135deg,#cc785c,#e8956d);
   display:flex;align-items:center;justify-content:center;
-  color:#fff;font-size:12px;font-weight:700;flex-shrink:0;
+  color:#fff;font-size:13px;font-weight:700;flex-shrink:0;
 }
 
 /* ── cards ── */
 .card{
   background:var(--card);border-radius:11px;
-  padding:11px 13px;display:flex;align-items:center;gap:13px;
+  padding:12px 14px;display:flex;align-items:center;gap:13px;
   box-shadow:0 1px 3px rgba(0,0,0,.06);
 }
 
 /* ── ring ── */
-.ring-wrap{position:relative;width:58px;height:58px;flex-shrink:0}
+.ring-wrap{position:relative;width:62px;height:62px;flex-shrink:0}
 .ring-wrap svg{transform:rotate(-90deg)}
 circle.track{fill:none;stroke:var(--sep);stroke-width:5.5}
 circle.arc{
@@ -79,23 +79,23 @@ circle.arc{
   position:absolute;inset:0;
   display:flex;flex-direction:column;align-items:center;justify-content:center;
 }
-.ring-pct{font-size:12px;font-weight:700;line-height:1}
-.ring-lbl{font-size:8px;color:var(--sub);margin-top:1px;letter-spacing:.2px}
+.ring-pct{font-size:13px;font-weight:700;line-height:1}
+.ring-lbl{font-size:9px;color:var(--sub);margin-top:2px;letter-spacing:.2px}
 
 /* ── card text ── */
 .info{flex:1;min-width:0}
-.info-label{font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:.5px;color:var(--sub);margin-bottom:5px}
-.info-rem{font-size:23px;font-weight:700;line-height:1;letter-spacing:-.5px}
-.info-rem em{font-size:13px;font-weight:500;font-style:normal;color:var(--sub)}
-.info-reset{font-size:11px;color:var(--sub);margin-top:4px}
+.info-label{font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:.5px;color:var(--sub);margin-bottom:5px}
+.info-rem{font-size:27px;font-weight:700;line-height:1;letter-spacing:-.5px}
+.info-rem em{font-size:15px;font-weight:500;font-style:normal;color:var(--sub)}
+.info-reset{font-size:13px;color:var(--sub);margin-top:5px}
 
 /* ── footer ── */
 .footer{display:flex;align-items:center;justify-content:space-between;padding-top:1px}
-.ts{font-size:11px;color:var(--sub)}
+.ts{font-size:12px;color:var(--sub)}
 .btns{display:flex;gap:6px}
 button{
-  font-family:inherit;font-size:12px;font-weight:500;
-  padding:5px 13px;border-radius:7px;border:none;
+  font-family:inherit;font-size:13px;font-weight:500;
+  padding:5px 14px;border-radius:7px;border:none;
   background:var(--btn);color:var(--text);cursor:pointer;
   -webkit-appearance:none;transition:background .12s,opacity .12s;
 }
@@ -103,6 +103,7 @@ button:hover{background:var(--btn-h)}
 button:disabled{opacity:.4;cursor:default}
 .primary{background:var(--accent);color:#fff}
 .primary:hover{opacity:.85}
+.sz-btn{font-size:11px;padding:4px 8px;color:var(--sub)}
 
 /* ── error ── */
 .err{
@@ -123,9 +124,9 @@ button:disabled{opacity:.4;cursor:default}
   <!-- session card -->
   <div class="card">
     <div class="ring-wrap">
-      <svg width="58" height="58" viewBox="0 0 58 58">
-        <circle class="track" cx="29" cy="29" r="22.5"/>
-        <circle class="arc" id="s-arc" cx="29" cy="29" r="22.5"/>
+      <svg width="62" height="62" viewBox="0 0 62 62">
+        <circle class="track" cx="31" cy="31" r="24"/>
+        <circle class="arc" id="s-arc" cx="31" cy="31" r="24"/>
       </svg>
       <div class="ring-inner">
         <div class="ring-pct" id="s-rpct">-</div>
@@ -142,9 +143,9 @@ button:disabled{opacity:.4;cursor:default}
   <!-- weekly card -->
   <div class="card">
     <div class="ring-wrap">
-      <svg width="58" height="58" viewBox="0 0 58 58">
-        <circle class="track" cx="29" cy="29" r="22.5"/>
-        <circle class="arc" id="w-arc" cx="29" cy="29" r="22.5"/>
+      <svg width="62" height="62" viewBox="0 0 62 62">
+        <circle class="track" cx="31" cy="31" r="24"/>
+        <circle class="arc" id="w-arc" cx="31" cy="31" r="24"/>
       </svg>
       <div class="ring-inner">
         <div class="ring-pct" id="w-rpct">-</div>
@@ -161,7 +162,11 @@ button:disabled{opacity:.4;cursor:default}
   <div class="err" id="err"></div>
 
   <div class="footer">
-    <span class="ts" id="ts">-</span>
+    <div class="btns">
+      <button class="sz-btn" onclick="changeScale(-0.1)" title="Smaller">A−</button>
+      <button class="sz-btn" onclick="changeScale(0.1)"  title="Larger">A+</button>
+      <span class="ts" id="ts">-</span>
+    </div>
     <div class="btns">
       <button onclick="doQuit()">Quit</button>
       <button class="primary" id="ref-btn" onclick="doRefresh()">Refresh</button>
@@ -170,7 +175,7 @@ button:disabled{opacity:.4;cursor:default}
 
 </div>
 <script>
-const C = 2 * Math.PI * 22.5;
+const C = 2 * Math.PI * 24;
 
 function color(u) {
   if (u < 60)  return '#34C759';
@@ -231,6 +236,13 @@ function doQuit() {
 
 initArc('s-arc');
 initArc('w-arc');
+
+let scale = 1.0;
+function changeScale(delta) {
+  scale = Math.round(Math.max(0.7, Math.min(1.5, scale + delta)) * 10) / 10;
+  document.documentElement.style.zoom = scale;
+  window.webkit.messageHandlers.scale.postMessage(String(scale));
+}
 </script>
 </body>
 </html>
@@ -261,7 +273,7 @@ class _JSHandler(NSObject):
         return self
 
     def userContentController_didReceiveScriptMessage_(self, ucc, msg):
-        self._cb(msg.name())
+        self._cb(msg.name(), msg.body())
 
 
 # ── main app delegate ─────────────────────────────────────────────────────────
@@ -314,9 +326,10 @@ class AppDelegate(NSObject):
         self._jsh = _JSHandler.alloc().initWithCallback_(self._on_js)
         ucc.addScriptMessageHandler_name_(self._jsh, "refresh")
         ucc.addScriptMessageHandler_name_(self._jsh, "quit")
+        ucc.addScriptMessageHandler_name_(self._jsh, "scale")
         cfg.setUserContentController_(ucc)
 
-        frame = AppKit.NSMakeRect(0, 0, 300, 290)
+        frame = AppKit.NSMakeRect(0, 0, 320, 290)
         self._wv = WebKit.WKWebView.alloc().initWithFrame_configuration_(frame, cfg)
         self._wv.setNavigationDelegate_(self)
         # transparent background so card shadow looks right
@@ -327,7 +340,7 @@ class AppDelegate(NSObject):
         vc.setView_(self._wv)
 
         self._pop = AppKit.NSPopover.alloc().init()
-        self._pop.setContentSize_(AppKit.NSMakeSize(300, 290))
+        self._pop.setContentSize_(AppKit.NSMakeSize(320, 290))
         self._pop.setContentViewController_(vc)
         self._pop.setBehavior_(AppKit.NSPopoverBehaviorTransient)
 
@@ -338,11 +351,16 @@ class AppDelegate(NSObject):
             self._pending = None
 
     @objc.python_method
-    def _on_js(self, name):
+    def _on_js(self, name, body=None):
         if name == "refresh":
             threading.Thread(target=self._fetch, daemon=True).start()
         elif name == "quit":
             AppKit.NSApplication.sharedApplication().terminate_(None)
+        elif name == "scale":
+            s = float(body)
+            NSOperationQueue.mainQueue().addOperationWithBlock_(
+                lambda: self._apply_scale(s)
+            )
 
     # ── timer ──────────────────────────────────────────────────────────────
 
@@ -394,6 +412,13 @@ class AppDelegate(NSObject):
     def _push(self, payload):
         js = f"updateUsage({json.dumps(payload)});"
         self._wv.evaluateJavaScript_completionHandler_(js, None)
+
+    @objc.python_method
+    def _apply_scale(self, scale):
+        w = int(320 * scale)
+        h = int(290 * scale)
+        self._wv.setFrame_(AppKit.NSMakeRect(0, 0, w, h))
+        self._pop.setContentSize_(AppKit.NSMakeSize(w, h))
 
     @objc.python_method
     def _apply_err(self, msg):
