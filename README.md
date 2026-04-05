@@ -4,7 +4,7 @@
 
 > [!WARNING]
 > **Unofficial side project - not affiliated with or endorsed by Anthropic.**
-> This uses claude.ai's internal, undocumented API. It may break at any time.
+> This uses [claude.ai](https://claude.ai)'s internal, undocumented API. It may break at any time.
 > The app will show `Claude ⚠` if something changes on Anthropic's end.
 
 ---
@@ -92,8 +92,8 @@ On first launch, macOS will ask for **Keychain access** - that's the app asking 
 
 - macOS 13 Ventura or later (tested on macOS 15 Sequoia)
 - Python 3.11+
-- Chrome, Firefox, Safari, Brave, or Edge with an active claude.ai login
-- A Claude.ai paid plan (Pro, Team, or Max - free tier doesn't expose these limits)
+- Chrome, Firefox, Safari, Brave, or Edge with an active [claude.ai](https://claude.ai) login
+- A [Claude.ai](https://claude.ai) paid plan (Pro, Team, or Max - free tier doesn't expose these limits)
 
 ---
 
@@ -152,7 +152,7 @@ print(f'Weekly:  {d.weekly_pct_used:.0f}% used | resets {weekly_reset_local_str(
 
 | Symptom | Most likely cause | Fix |
 |---------|------------------|-----|
-| `Claude ⚠` in menu bar | Cookie expired or not logged in | Log out and back into claude.ai in Chrome |
+| `Claude ⚠` in menu bar | Cookie expired or not logged in | Log out and back into [claude.ai](https://claude.ai) in Chrome |
 | `Could not find org UUID` | `/api/bootstrap` changed | Run `python3 discover.py` |
 | `Claude ⚠` after an Anthropic update | API endpoint or response shape changed | Run `python3 discover.py` and open an issue |
 | Keychain prompt denied | Denied on first run | System Settings → Privacy & Security → Keychain Access |
