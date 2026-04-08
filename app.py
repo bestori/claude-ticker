@@ -198,6 +198,7 @@ function setArc(id, used) {
 }
 
 function updateUsage(d) {
+  hasData = true;
   document.getElementById('err').style.display = 'none';
   const su = d.session_pct_used, sr = Math.round(100 - su);
   const wu = d.weekly_pct_used,  wr = Math.round(100 - wu);
@@ -218,11 +219,17 @@ function updateUsage(d) {
 }
 
 function showError(msg) {
-  const el = document.getElementById('err');
-  el.style.display = 'block';
-  el.textContent   = '⚠\u2009' + msg;
   const b = document.getElementById('ref-btn');
   b.textContent = 'Refresh'; b.disabled = false;
+  if (hasData) {
+    const ts = document.getElementById('ts');
+    ts.textContent = '⚠ Refresh failed';
+    ts.title = msg;
+  } else {
+    const el = document.getElementById('err');
+    el.style.display = 'block';
+    el.textContent = '⚠\u2009' + msg;
+  }
 }
 
 function doRefresh() {
@@ -237,6 +244,7 @@ function doQuit() {
 initArc('s-arc');
 initArc('w-arc');
 
+let hasData = false;
 let scale = 1.0;
 function changeScale(delta) {
   scale = Math.round(Math.max(0.7, Math.min(1.5, scale + delta)) * 10) / 10;
