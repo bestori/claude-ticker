@@ -69,20 +69,24 @@ def _make_session() -> requests.Session:
     return s
 
 
-def _get_org_uuid(s: requests.Session) -> str:
-    """Return the organisation UUID from /api/bootstrap."""
+def _get_org_uuids(s: requests.Session) -> list:
+    """Return all organisation UUIDs from /api/bootstrap."""
     r = s.get(f"{BASE}/api/bootstrap", timeout=10)
     r.raise_for_status()
     data = r.json()
+    seen = set()
+    uuids = []
     for m in data.get("account", {}).get("memberships", []):
-        org = m.get("organization") or {}
-        uid = org.get("uuid")
-        if uid:
-            return uid
-    raise RuntimeError(
-        "Could not find org UUID in /api/bootstrap response. "
-        "Are you logged in to claude.ai in Chrome?"
-    )
+        uid = (m.get("organization") or {}).get("uuid")
+        if uid and uid not in seen:
+            seen.add(uid)
+            uuids.append(uid)
+    if not uuids:
+        raise RuntimeError(
+            "Could not find org UUID in /api/bootstrap response. "
+            "Are you logged in to claude.ai in Chrome?"
+        )
+    return uuids
 
 
 def _parse_iso(ts: Optional[str]) -> Optional[datetime]:
@@ -126,19 +130,26 @@ def _next_reset(dt: Optional[datetime], window_hours: int) -> Optional[datetime]
 def fetch_usage() -> UsageData:
     """
     Returns current Claude.ai session + weekly usage.
+    Tries all org UUIDs from /api/bootstrap, uses the first that returns 200.
     Raises RuntimeError on auth or network failure.
     """
     s = _make_session()
-    org_uuid = _get_org_uuid(s)
+    org_uuids = _get_org_uuids(s)
 
-    url = f"{BASE}/api/organizations/{org_uuid}/usage"
-    try:
-        r = s.get(url, timeout=10)
-        r.raise_for_status()
-    except requests.HTTPError as e:
-        raise RuntimeError(f"Usage API returned {r.status_code}: {e}") from e
-    except requests.RequestException as e:
-        raise RuntimeError(f"Network error fetching usage: {e}") from e
+    last_err: Exception = RuntimeError("No org UUIDs found")
+    for org_uuid in org_uuids:
+        url = f"{BASE}/api/organizations/{org_uuid}/usage"
+        try:
+            r = s.get(url, timeout=10)
+            r.raise_for_status()
+            break
+        except requests.HTTPError as e:
+            last_err = RuntimeError(f"Usage API returned {r.status_code}: {e}")
+            continue
+        except requests.RequestException as e:
+            raise RuntimeError(f"Network error fetching usage: {e}") from e
+    else:
+        raise last_err
 
     data = r.json()
 
