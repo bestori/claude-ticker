@@ -8,12 +8,10 @@ environment, run tests and the linter, and debug the most common failure mode
 
 ## Prerequisites
 
-- **macOS** - required to run the app itself (menu bar + WebKit). Tests can run
-  on any platform, but CI is pinned to `macos-latest` because `browser_cookie3`
-  and `pycryptodome` have platform-specific behaviour.
 - **Python 3.11+** - the codebase targets 3.11 as the minimum version.
-- **Google Chrome** with an active `claude.ai` login - only needed if you want
-  to run the app or the live scraper test.
+- **macOS** to run or build the macOS app (`app.py`). Tests run on any platform.
+- **Windows 10+** to run or build the Windows app (`app_windows.py`). WebView2 runtime required (pre-installed on Win10/11).
+- **Chrome** (or another supported browser) with an active `claude.ai` login — only needed to run the app or live scraper test.
 
 ---
 
@@ -26,25 +24,35 @@ cd claude-ticker
 
 # Create a virtual environment (recommended)
 python3 -m venv .venv
-source .venv/bin/activate
+source .venv/bin/activate        # macOS/Linux
+# .venv\Scripts\activate         # Windows
 
-# Install development dependencies
+# Install development dependencies (works on all platforms)
 pip install -r requirements-dev.txt
 
-# Install full runtime dependencies (needed to build or run the app)
+# macOS: install full runtime deps
 pip install -r requirements.txt
+
+# Windows: install full runtime deps
+pip install -r requirements-windows.txt
 ```
 
 ---
 
 ## Running the app without building
 
+### macOS
 ```bash
 python3 app.py
 ```
 
-The app appears in the menu bar immediately. Quit via the button in the popover
-or `Ctrl-C` in the terminal.
+### Windows
+```bat
+python app_windows.py
+```
+
+The app appears in the menu bar / system tray immediately. Quit via the button
+in the popup or `Ctrl-C` in the terminal.
 
 ---
 
@@ -54,8 +62,8 @@ or `Ctrl-C` in the terminal.
 pytest tests/ -v
 ```
 
-All tests mock out network I/O and cookie access - no live claude.ai session is
-needed. The suite runs in under a second.
+All tests mock out network I/O and cookie access — no live claude.ai session is
+needed. The suite runs in under a second on any platform.
 
 Run a single test file:
 
@@ -90,9 +98,23 @@ ruff format --check .
 ruff format .
 ```
 
-Configuration is in `pyproject.toml`. The only intentional suppression is
-`E501` (line-too-long) in `app.py`, which contains a minified HTML/CSS/JS
-constant with intentionally long lines.
+Configuration is in `pyproject.toml`.
+
+---
+
+## Building a distributable
+
+### macOS (.app)
+```bash
+./build.sh
+cp -r dist/ClaudeTicker.app /Applications/
+```
+
+### Windows (.exe)
+```bat
+pyinstaller app_windows.py --onefile --windowed --name ClaudeTicker
+# output: dist\ClaudeTicker.exe
+```
 
 ---
 
@@ -120,7 +142,7 @@ Common errors and what they mean:
 | Error message | Likely cause | Where to look |
 |---------------|-------------|---------------|
 | `Could not read chrome cookies` | Keychain access denied, or Chrome not installed | System Settings → Privacy & Security → Keychain |
-| `Could not find org UUID` | `/api/bootstrap` response shape changed | `scraper._get_org_uuid()` |
+| `Could not find org UUID` | `/api/bootstrap` response shape changed | `scraper._get_org_uuids()` |
 | `Usage API returned 404` | Endpoint path changed | Run `discover.py` |
 | `Usage API returned 403` | Session cookie expired | Log out and back in to claude.ai in Chrome |
 | `Network error fetching usage` | No internet, DNS failure, or claude.ai is down | Check connectivity |
@@ -163,10 +185,10 @@ Account keys: ['tagged_id', 'uuid', 'email_address', 'memberships', ...]
 
 ### Step 3 - update the parser
 
-If the endpoint has moved, update `fetch_usage()` in `scraper.py:111`.
+If the endpoint has moved, update `fetch_usage()` in `scraper.py`.
 
 If the response schema has changed (different key names), update the field
-lookups near `scraper.py:133`:
+lookups in `fetch_usage()`:
 
 ```python
 five  = data.get("five_hour")  or {}   # ← update key if renamed
@@ -199,18 +221,11 @@ contributors find it quickly.
    )
    ```
 
-3. `scraper._make_session()` uses `getattr(browser_cookie3, browser)` - no
+3. `scraper._make_session()` uses `getattr(browser_cookie3, browser)` — no
    other changes needed in the scraper.
 
-4. Add the new browser to the parametrised test in `tests/test_config.py`:
-
-   ```python
-   @pytest.mark.parametrize("browser", sorted(SUPPORTED_BROWSERS))
-   def test_all_supported_browsers_accepted(self, ...):
-   ```
-
-   This test is driven by `SUPPORTED_BROWSERS` directly, so no manual update
-   is needed if the constant is updated correctly in step 2.
+4. The parametrised test in `tests/test_config.py` is driven by
+   `SUPPORTED_BROWSERS` directly, so it will automatically cover the new browser.
 
 5. Update the browser table in `README.md`.
 
@@ -224,27 +239,30 @@ contributors find it quickly.
 - [ ] No new hardcoded browser names outside `config.py`
 - [ ] Any new API endpoint has been added to `discover.py`'s `CANDIDATES` list
 - [ ] `CLAUDE.md` is updated if the architecture has changed
+- [ ] UI changes made to `ui_shared.py` (not to `app.py` or `app_windows.py` directly)
 
 ---
 
 ## Architecture overview
 
 ```
-app.py        NSApplication delegate, NSStatusBar item, NSPopover + WKWebView,
-              NSTimer for auto-refresh, thread-safe fetch dispatch
-scraper.py    Cookie extraction, /api/bootstrap, /api/organizations/{uuid}/usage,
-              reset-time arithmetic
-config.py     ~/.config/claude-ticker/config.json read/write, browser selection
-discover.py   One-shot diagnostic endpoint probe (not part of the running app)
-setup.py      py2app bundle configuration (LSUIElement, Info.plist keys)
-tests/        Unit tests for scraper.py and config.py (48 tests, no network I/O)
+ui_shared.py      Shared HTML/CSS/JS popup page + _fmt() helper
+                  Used by both app.py and app_windows.py
+app.py            macOS: NSApplication delegate, NSStatusBar item,
+                  NSPopover + WKWebView, NSTimer for auto-refresh
+app_windows.py    Windows: pystray tray icon, pywebview floating window
+                  positioned bottom-right above taskbar
+scraper.py        Cookie extraction, /api/bootstrap,
+                  /api/organizations/{uuid}/usage, reset-time arithmetic
+config.py         ~/.config/claude-ticker/config.json read/write, browser selection
+discover.py       One-shot diagnostic endpoint probe (not part of the running app)
+setup.py          py2app bundle configuration (macOS, LSUIElement, Info.plist keys)
+tests/            Unit tests for scraper.py and config.py (48 tests, no network I/O)
 ```
 
-The popover UI is a self-contained HTML/CSS/JS string embedded at the top of
-`app.py`. Python pushes data updates via `WKWebView.evaluateJavaScript`. The
-page sends actions back (Refresh, Quit) via
-`window.webkit.messageHandlers.<name>.postMessage()`, received by `_JSHandler`
-which implements the `WKScriptMessageHandler` protocol.
+**JS bridge:** The popup HTML uses a `_post(name, val)` function that detects
+the host at runtime — `window.webkit.messageHandlers` on macOS, `window.pywebview.api`
+on Windows. Any UI changes go in `ui_shared.py` and automatically apply to both platforms.
 
 ---
 
@@ -252,7 +270,6 @@ which implements the `WKScriptMessageHandler` protocol.
 
 Please include:
 1. The output of `python3 discover.py`
-2. Your macOS version (`sw_vers`)
+2. Your OS version
 3. Your Python version (`python3 --version`)
-4. The browser you're using (from `~/.config/claude-ticker/config.json` or
-   default `chrome`)
+4. The browser you're using (from `~/.config/claude-ticker/config.json` or default `chrome`)

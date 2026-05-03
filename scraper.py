@@ -14,6 +14,7 @@ The browser used for cookie extraction is read from
 ~/.config/claude-ticker/config.json (key: "browser"). Defaults to "chrome".
 """
 
+import platform
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from typing import Optional
@@ -184,4 +185,5 @@ def weekly_reset_local_str(d: UsageData) -> Optional[str]:
     if d.weekly_resets_at is None:
         return None
     local = d.weekly_resets_at.astimezone()  # system timezone
-    return local.strftime("%a %-I:%M %p")
+    hour_fmt = "%#I" if platform.system() == "Windows" else "%-I"
+    return local.strftime(f"%a {hour_fmt}:%M %p")

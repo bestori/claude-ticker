@@ -30,7 +30,7 @@ Shortly after, I had a Python script scraping the page. Then - a proper macOS `.
 
 ## What it does
 
-A tiny item lives permanently in your macOS menu bar:
+A tiny item lives permanently in your menu bar (macOS) or system tray (Windows):
 
 ![Claude Ticker in the macOS menu bar](docs/screenshots/menubar.png)
 
@@ -50,15 +50,15 @@ Two cards with animated SVG arc rings, one for each limit window. The rings fill
 | 60 – 84% | Orange |
 | 85 – 100% | Red |
 
-Fully dark-mode aware. Refreshes every 120 seconds on its own, or on demand via the Refresh button.  
+Fully dark-mode aware. Refreshes every 120 seconds on its own, or on demand via the Refresh button. Use the **A− / A+** buttons to scale the popup to your taste.
 
-**Note: macOS only. [PRs, issues, and contributions welcome!](https://github.com/bestori/claude-ticker)**
+**[PRs, issues, and contributions welcome!](https://github.com/bestori/claude-ticker)**
 
 ---
 
 ## How it actually works
 
-No API key required. No Anthropic SDK. It does exactly what your browser does when you open that settings page - it reads your existing Chrome session cookie and makes the same internal API call the web UI makes.
+No API key required. No Anthropic SDK. It does exactly what your browser does when you open that settings page - it reads your existing browser session cookie and makes the same internal API call the web UI makes.
 
 The two calls it makes every refresh:
 
@@ -90,14 +90,24 @@ On first launch, macOS will ask for **Keychain access** - that's the app asking 
 
 ## Requirements
 
+### macOS
 - macOS 13 Ventura or later (tested on macOS 15 Sequoia)
 - Python 3.11+
 - Chrome, Firefox, Safari, Brave, or Edge with an active [claude.ai](https://claude.ai) login
-- A [Claude.ai](https://claude.ai) paid plan (Pro, Team, or Max - free tier doesn't expose these limits)
+
+### Windows
+- Windows 10 or later (WebView2 runtime required — pre-installed on Win10/11)
+- Python 3.11+
+- Chrome, Firefox, Brave, or Edge with an active [claude.ai](https://claude.ai) login
+
+### Both
+- A [Claude.ai](https://claude.ai) paid plan (Pro, Team, or Max — free tier doesn't expose these limits)
 
 ---
 
 ## Installation
+
+### macOS
 
 ```bash
 # 1. Install dependencies
@@ -114,6 +124,23 @@ cp -r dist/ClaudeTicker.app /Applications/
 
 **Auto-start on login:** System Settings → General → Login Items → `+` → pick `ClaudeTicker.app`.
 
+### Windows
+
+```bat
+# 1. Install dependencies
+pip install -r requirements-windows.txt
+
+# 2. Build the .exe
+pyinstaller app_windows.py --onefile --windowed --name ClaudeTicker
+
+# 3. Run
+dist\ClaudeTicker.exe
+```
+
+The popup appears in the **bottom-right corner**, above the taskbar. Left-click the tray icon to show/hide it. Right-click for Quit.
+
+**Auto-start on login:** add a shortcut to `ClaudeTicker.exe` in `shell:startup`.
+
 ---
 
 ## Browser configuration
@@ -124,18 +151,24 @@ Chrome by default. To use something else, create `~/.config/claude-ticker/config
 { "browser": "firefox" }
 ```
 
-Valid values: `chrome`, `chromium`, `brave`, `firefox`, `safari`, `edge`.
+Valid values: `chrome`, `chromium`, `brave`, `firefox`, `safari` (macOS only), `edge`.
 Changes take effect on the next refresh - no restart needed.
 
 ---
 
-## Running in dev mode (no .app build)
+## Running in dev mode (no build)
 
+### macOS
 ```bash
 python3 app.py
 ```
 
-App appears in the menu bar immediately. To test just the data fetching:
+### Windows
+```bat
+python app_windows.py
+```
+
+To test just the data fetching on either platform:
 
 ```bash
 python3 -c "
@@ -155,8 +188,9 @@ print(f'Weekly:  {d.weekly_pct_used:.0f}% used | resets {weekly_reset_local_str(
 | `Claude ⚠` in menu bar | Cookie expired or not logged in | Log out and back into [claude.ai](https://claude.ai) in Chrome |
 | `Could not find org UUID` | `/api/bootstrap` changed | Run `python3 discover.py` |
 | `Claude ⚠` after an Anthropic update | API endpoint or response shape changed | Run `python3 discover.py` and open an issue |
-| Keychain prompt denied | Denied on first run | System Settings → Privacy & Security → Keychain Access |
+| Keychain prompt denied (macOS) | Denied on first run | System Settings → Privacy & Security → Keychain Access |
 | Shows `…` forever | First fetch still in progress | Wait 30s; if stuck, quit and restart |
+| Popup doesn't appear (Windows) | WebView2 not installed | Install [Microsoft Edge WebView2](https://developer.microsoft.com/en-us/microsoft-edge/webview2/) |
 
 If the API has moved, `discover.py` will probe a list of candidate endpoints and show you exactly what comes back:
 
@@ -171,19 +205,22 @@ CLAUDE_TICKER_BROWSER=firefox python3 discover.py
 ## Project structure
 
 ```
-claude_osx_util/
-├── app.py               Menu bar UI - NSStatusItem, NSPopover, WKWebView, NSTimer
-├── scraper.py           All HTTP - cookie extraction, API calls, reset arithmetic
-├── config.py            Browser selection via ~/.config/claude-ticker/config.json
-├── discover.py          One-shot endpoint probe (run when the scraper breaks)
-├── setup.py             py2app bundle config
-├── build.sh             build + sign in one step
-├── requirements.txt     Runtime deps
-├── requirements-dev.txt Test/lint deps (pytest, ruff)
-├── pyproject.toml       Ruff config
+claude-ticker/
+├── app.py                macOS UI — NSStatusItem, NSPopover, WKWebView, NSTimer
+├── app_windows.py        Windows UI — pystray tray icon, pywebview floating window
+├── ui_shared.py          Shared HTML/CSS/JS popup + _fmt() helper (both platforms)
+├── scraper.py            All HTTP — cookie extraction, API calls, reset arithmetic
+├── config.py             Browser selection via ~/.config/claude-ticker/config.json
+├── discover.py           One-shot endpoint probe (run when the scraper breaks)
+├── setup.py              py2app bundle config (macOS)
+├── build.sh              macOS build + sign in one step
+├── requirements.txt      macOS runtime deps
+├── requirements-windows.txt  Windows runtime deps (pystray, pywebview, pillow)
+├── requirements-dev.txt  Test/lint deps (pytest, ruff)
+├── pyproject.toml        Ruff + pytest config
 ├── tests/
-│   ├── test_scraper.py  27 unit tests, fully mocked
-│   └── test_config.py   21 unit tests
+│   ├── test_scraper.py   Unit tests for scraper.py (fully mocked)
+│   └── test_config.py    Unit tests for config.py
 └── .github/workflows/lint.yml  CI (ruff + pytest, macos-latest)
 ```
 
@@ -202,14 +239,17 @@ pytest tests/ -v
 
 ## Under the hood
 
-**Why PyObjC and not something like `rumps`?**
+**Why PyObjC on macOS and not something like `rumps`?**
 `rumps` wraps standard `NSMenu` dropdowns - text only. The graphical popover with arc rings needs `NSPopover` + `WKWebView`, which requires direct AppKit/WebKit bindings. PyObjC gives you the full Cocoa API from Python.
 
-**Why is the popup HTML embedded as a Python string?**
-py2app's resource directory layout differs between dev and bundled mode. Embedding the HTML as a constant in `app.py` sidesteps path-resolution entirely and keeps the popover self-contained.
+**Why pystray + pywebview on Windows?**
+The popup HTML/CSS/JS is already a self-contained page — pywebview renders it in an Edge WebView2 window. pystray handles the system tray icon. Together they're a thin wrapper around the same UI, with no Electron or Node.js involved.
+
+**How does the same HTML work on both platforms?**
+The JS bridge uses a `_post()` function that detects the host at runtime: on macOS it routes through `window.webkit.messageHandlers`; on Windows through `window.pywebview.api`. The HTML lives in `ui_shared.py` and is imported by both `app.py` and `app_windows.py`.
 
 **Thread model:**
-The UI runs on the main `NSRunLoop`. All network I/O happens on background threads. Results are posted back to the main thread via `NSOperationQueue.mainQueue()`. A non-blocking `threading.Lock` prevents concurrent fetches.
+The UI runs on the main thread (NSRunLoop on macOS, pywebview event loop on Windows). All network I/O happens on daemon background threads. A non-blocking `threading.Lock` prevents concurrent fetches.
 
 ---
 
