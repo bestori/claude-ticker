@@ -88,6 +88,33 @@ On first launch, macOS will ask for **Keychain access** - that's the app asking 
 
 ---
 
+## Quick start
+
+### macOS
+
+```bash
+pip3 install -r requirements.txt   # install deps
+./build.sh                         # build ClaudeTicker.app
+cp -r dist/ClaudeTicker.app /Applications/
+open /Applications/ClaudeTicker.app
+```
+
+> First launch: right-click → Open (macOS Gatekeeper). After that, launch normally.  
+> Auto-start: System Settings → General → Login Items → `+` → pick `ClaudeTicker.app`.
+
+### Windows
+
+```bat
+pip install -r requirements-windows.txt
+pyinstaller app_windows.py --onefile --windowed --name ClaudeTicker
+dist\ClaudeTicker.exe
+```
+
+> Popup appears bottom-right, above the taskbar. Left-click tray icon to show/hide. Right-click for Quit.  
+> Auto-start: add shortcut to `ClaudeTicker.exe` in `shell:startup`.
+
+---
+
 ## Requirements
 
 ### macOS
@@ -102,44 +129,6 @@ On first launch, macOS will ask for **Keychain access** - that's the app asking 
 
 ### Both
 - A [Claude.ai](https://claude.ai) paid plan (Pro, Team, or Max — free tier doesn't expose these limits)
-
----
-
-## Installation
-
-### macOS
-
-```bash
-# 1. Install dependencies
-pip3 install -r requirements.txt
-
-# 2. Build the .app
-./build.sh
-
-# 3. Install
-cp -r dist/ClaudeTicker.app /Applications/
-```
-
-**First launch:** right-click → Open the first time (macOS Gatekeeper, unsigned app). After that, launch normally.
-
-**Auto-start on login:** System Settings → General → Login Items → `+` → pick `ClaudeTicker.app`.
-
-### Windows
-
-```bat
-# 1. Install dependencies
-pip install -r requirements-windows.txt
-
-# 2. Build the .exe
-pyinstaller app_windows.py --onefile --windowed --name ClaudeTicker
-
-# 3. Run
-dist\ClaudeTicker.exe
-```
-
-The popup appears in the **bottom-right corner**, above the taskbar. Left-click the tray icon to show/hide it. Right-click for Quit.
-
-**Auto-start on login:** add a shortcut to `ClaudeTicker.exe` in `shell:startup`.
 
 ---
 
