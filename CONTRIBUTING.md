@@ -31,7 +31,7 @@ source .venv/bin/activate        # macOS/Linux
 pip install -r requirements-dev.txt
 
 # macOS: install full runtime deps
-pip install -r requirements.txt
+pip install -r requirements-macos.txt
 
 # Windows: install full runtime deps
 pip install -r requirements-windows.txt

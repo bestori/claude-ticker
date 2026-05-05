@@ -3,7 +3,7 @@
 set -euo pipefail
 
 echo "==> Installing Python dependencies…"
-pip3 install -r requirements.txt
+pip3 install -r requirements-macos.txt
 
 echo "==> Cleaning previous build…"
 rm -rf build dist

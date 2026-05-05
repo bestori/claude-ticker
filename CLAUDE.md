@@ -14,7 +14,7 @@ Click → popup with animated SVG arc rings, colour-coded by pressure level, and
 
 ```bash
 # Install runtime dependencies (macOS)
-pip3 install -r requirements.txt
+pip3 install -r requirements-macos.txt
 
 # Install runtime dependencies (Windows)
 pip install -r requirements-windows.txt

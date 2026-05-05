@@ -9,6 +9,68 @@
 
 ---
 
+## Install & Run
+
+> [!IMPORTANT]
+> **Pick your platform below. Do NOT mix the requirements files.**
+
+### Windows
+
+**Step 1 — Install dependencies**
+```bat
+pip install -r requirements-windows.txt
+```
+
+**Step 2 — Build the .exe**
+```bat
+pyinstaller app_windows.py --onefile --windowed --name ClaudeTicker
+```
+
+**Step 3 — Run it**
+```bat
+dist\ClaudeTicker.exe
+```
+
+The app appears in the **system tray** (bottom-right corner). Left-click the tray icon to show/hide the popup. Right-click → Quit.
+
+> **Prerequisites:** Windows 10 or later · Python 3.11+ · WebView2 runtime (already installed on most Windows 10/11 machines — if missing, grab it from [Microsoft](https://developer.microsoft.com/en-us/microsoft-edge/webview2/)) · Chrome, Firefox, Brave, or Edge logged into [claude.ai](https://claude.ai)
+
+> **Auto-start:** Drop a shortcut to `ClaudeTicker.exe` into `shell:startup`.
+
+---
+
+### macOS
+
+**Step 1 — Install dependencies**
+```bash
+pip3 install -r requirements-macos.txt
+```
+
+**Step 2 — Build the .app**
+```bash
+./build.sh
+```
+
+**Step 3 — Install & run**
+```bash
+cp -r dist/ClaudeTicker.app /Applications/
+open /Applications/ClaudeTicker.app
+```
+
+The app appears in the **menu bar**. Click it to open the popup.
+
+> **First launch:** Right-click → Open (macOS Gatekeeper). After that, launch normally.  
+> **Keychain prompt:** Allow it — this lets the app read your browser's session cookie.  
+> **Auto-start:** System Settings → General → Login Items → `+` → pick `ClaudeTicker.app`.
+
+> **Prerequisites:** macOS 13 Ventura or later (tested on macOS 15 Sequoia) · Python 3.11+ · Chrome, Firefox, Safari, Brave, or Edge logged into [claude.ai](https://claude.ai)
+
+---
+
+> **Both platforms require a [Claude.ai](https://claude.ai) paid plan** (Pro, Team, or Max — the free tier does not expose usage limits).
+
+---
+
 ## Why do you need *yet another ticker*?
 
 Another inevitable Claude session... and you suddenly hit a rate limit.  
@@ -88,50 +150,6 @@ On first launch, macOS will ask for **Keychain access** - that's the app asking 
 
 ---
 
-## Quick start
-
-### macOS
-
-```bash
-pip3 install -r requirements.txt   # install deps
-./build.sh                         # build ClaudeTicker.app
-cp -r dist/ClaudeTicker.app /Applications/
-open /Applications/ClaudeTicker.app
-```
-
-> First launch: right-click → Open (macOS Gatekeeper). After that, launch normally.  
-> Auto-start: System Settings → General → Login Items → `+` → pick `ClaudeTicker.app`.
-
-### Windows
-
-```bat
-pip install -r requirements-windows.txt
-pyinstaller app_windows.py --onefile --windowed --name ClaudeTicker
-dist\ClaudeTicker.exe
-```
-
-> Popup appears bottom-right, above the taskbar. Left-click tray icon to show/hide. Right-click for Quit.  
-> Auto-start: add shortcut to `ClaudeTicker.exe` in `shell:startup`.
-
----
-
-## Requirements
-
-### macOS
-- macOS 13 Ventura or later (tested on macOS 15 Sequoia)
-- Python 3.11+
-- Chrome, Firefox, Safari, Brave, or Edge with an active [claude.ai](https://claude.ai) login
-
-### Windows
-- Windows 10 or later (WebView2 runtime required — pre-installed on Win10/11)
-- Python 3.11+
-- Chrome, Firefox, Brave, or Edge with an active [claude.ai](https://claude.ai) login
-
-### Both
-- A [Claude.ai](https://claude.ai) paid plan (Pro, Team, or Max — free tier doesn't expose these limits)
-
----
-
 ## Browser configuration
 
 Chrome by default. To use something else, create `~/.config/claude-ticker/config.json`:
@@ -180,6 +198,9 @@ print(f'Weekly:  {d.weekly_pct_used:.0f}% used | resets {weekly_reset_local_str(
 | Keychain prompt denied (macOS) | Denied on first run | System Settings → Privacy & Security → Keychain Access |
 | Shows `…` forever | First fetch still in progress | Wait 30s; if stuck, quit and restart |
 | Popup doesn't appear (Windows) | WebView2 not installed | Install [Microsoft Edge WebView2](https://developer.microsoft.com/en-us/microsoft-edge/webview2/) |
+| `Could not decrypt cookies` (Windows) | Chrome profile locked or wrong crypto backend | Close Chrome fully, retry. Or switch to Firefox/Edge in config |
+| Install errors mentioning `objc` or `AppKit` (Windows) | Wrong requirements file used | Run `pip install -r requirements-windows.txt` — never use `requirements-macos.txt` on Windows |
+| `ModuleNotFoundError: No module named 'pystray'` | Wrong requirements file used | Run `pip install -r requirements-windows.txt` |
 
 If the API has moved, `discover.py` will probe a list of candidate endpoints and show you exactly what comes back:
 
@@ -203,8 +224,8 @@ claude-ticker/
 ├── discover.py           One-shot endpoint probe (run when the scraper breaks)
 ├── setup.py              py2app bundle config (macOS)
 ├── build.sh              macOS build + sign in one step
-├── requirements.txt      macOS runtime deps
-├── requirements-windows.txt  Windows runtime deps (pystray, pywebview, pillow)
+├── requirements-macos.txt    macOS runtime deps  ← use this on macOS
+├── requirements-windows.txt  Windows runtime deps ← use this on Windows
 ├── requirements-dev.txt  Test/lint deps (pytest, ruff)
 ├── pyproject.toml        Ruff + pytest config
 ├── tests/
