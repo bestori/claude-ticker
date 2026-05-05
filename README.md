@@ -33,7 +33,7 @@ dist\ClaudeTicker.exe
 
 The app appears in the **system tray** (bottom-right corner). Left-click the tray icon to show/hide the popup. Right-click → Quit.
 
-> **Prerequisites:** Windows 10 or later · Python 3.11+ · WebView2 runtime (already installed on most Windows 10/11 machines — if missing, grab it from [Microsoft](https://developer.microsoft.com/en-us/microsoft-edge/webview2/)) · Chrome, Firefox, Brave, or Edge logged into [claude.ai](https://claude.ai)
+> **Prerequisites:** Windows 10 or later · Python 3.11–3.13 (3.14 not yet supported — see [note](#python-version)) · WebView2 runtime (already installed on most Windows 10/11 machines — if missing, grab it from [Microsoft](https://developer.microsoft.com/en-us/microsoft-edge/webview2/)) · Chrome, Firefox, Brave, or Edge logged into [claude.ai](https://claude.ai)
 
 > **Auto-start:** Drop a shortcut to `ClaudeTicker.exe` into `shell:startup`.
 
@@ -63,7 +63,7 @@ The app appears in the **menu bar**. Click it to open the popup.
 > **Keychain prompt:** Allow it — this lets the app read your browser's session cookie.  
 > **Auto-start:** System Settings → General → Login Items → `+` → pick `ClaudeTicker.app`.
 
-> **Prerequisites:** macOS 13 Ventura or later (tested on macOS 15 Sequoia) · Python 3.11+ · Chrome, Firefox, Safari, Brave, or Edge logged into [claude.ai](https://claude.ai)
+> **Prerequisites:** macOS 13 Ventura or later (tested on macOS 15 Sequoia) · Python 3.11–3.13 (3.14 not yet supported — see [note](#python-version)) · Chrome, Firefox, Safari, Brave, or Edge logged into [claude.ai](https://claude.ai)
 
 ---
 
@@ -260,6 +260,16 @@ The JS bridge uses a `_post()` function that detects the host at runtime: on mac
 
 **Thread model:**
 The UI runs on the main thread (NSRunLoop on macOS, pywebview event loop on Windows). All network I/O happens on daemon background threads. A non-blocking `threading.Lock` prevents concurrent fetches.
+
+---
+
+## Python version
+
+**Supported: Python 3.11, 3.12, 3.13.**
+
+Python 3.14 is not yet supported. The blockers are packaging dependencies — `py2app` (macOS bundler) and `PyObjC` are slow to publish wheels for new Python releases. The project code itself has no 3.14 incompatibilities; once those packages ship 3.14 wheels this note will be removed.
+
+Check your version: `python3 --version`
 
 ---
 
