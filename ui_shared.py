@@ -108,6 +108,14 @@ button:disabled{opacity:.4;cursor:default}
   background:rgba(255,59,48,.1);color:#ff3b30;
   font-size:11px;line-height:1.45;
 }
+
+/* ── auth screen (not logged in) ── */
+.auth-screen{
+  display:none;flex:1;flex-direction:column;align-items:center;justify-content:center;
+  gap:14px;text-align:center;
+}
+.auth-screen .auth-msg{font-size:13px;color:var(--sub);line-height:1.5}
+.auth-screen .auth-login{font-size:14px;padding:8px 24px}
 </style>
 </head>
 <body>
@@ -118,53 +126,61 @@ button:disabled{opacity:.4;cursor:default}
     Claude Usage
   </div>
 
-  <!-- session card -->
-  <div class="card">
-    <div class="ring-wrap">
-      <svg width="62" height="62" viewBox="0 0 62 62">
-        <circle class="track" cx="31" cy="31" r="24"/>
-        <circle class="arc" id="s-arc" cx="31" cy="31" r="24"/>
-      </svg>
-      <div class="ring-inner">
-        <div class="ring-pct" id="s-rpct">-</div>
-        <div class="ring-lbl">used</div>
+  <div id="cards">
+    <!-- session card -->
+    <div class="card" style="margin-bottom:9px">
+      <div class="ring-wrap">
+        <svg width="62" height="62" viewBox="0 0 62 62">
+          <circle class="track" cx="31" cy="31" r="24"/>
+          <circle class="arc" id="s-arc" cx="31" cy="31" r="24"/>
+        </svg>
+        <div class="ring-inner">
+          <div class="ring-pct" id="s-rpct">-</div>
+          <div class="ring-lbl">used</div>
+        </div>
+      </div>
+      <div class="info">
+        <div class="info-label">Session &middot; 5-hour window</div>
+        <div class="info-rem" id="s-rem">-<em>% left</em></div>
+        <div class="info-reset" id="s-reset">Resets in -</div>
       </div>
     </div>
-    <div class="info">
-      <div class="info-label">Session &middot; 5-hour window</div>
-      <div class="info-rem" id="s-rem">-<em>% left</em></div>
-      <div class="info-reset" id="s-reset">Resets in -</div>
+
+    <!-- weekly card -->
+    <div class="card">
+      <div class="ring-wrap">
+        <svg width="62" height="62" viewBox="0 0 62 62">
+          <circle class="track" cx="31" cy="31" r="24"/>
+          <circle class="arc" id="w-arc" cx="31" cy="31" r="24"/>
+        </svg>
+        <div class="ring-inner">
+          <div class="ring-pct" id="w-rpct">-</div>
+          <div class="ring-lbl">used</div>
+        </div>
+      </div>
+      <div class="info">
+        <div class="info-label">Weekly &middot; 7-day window</div>
+        <div class="info-rem" id="w-rem">-<em>% left</em></div>
+        <div class="info-reset" id="w-reset">Resets -</div>
+      </div>
     </div>
   </div>
 
-  <!-- weekly card -->
-  <div class="card">
-    <div class="ring-wrap">
-      <svg width="62" height="62" viewBox="0 0 62 62">
-        <circle class="track" cx="31" cy="31" r="24"/>
-        <circle class="arc" id="w-arc" cx="31" cy="31" r="24"/>
-      </svg>
-      <div class="ring-inner">
-        <div class="ring-pct" id="w-rpct">-</div>
-        <div class="ring-lbl">used</div>
-      </div>
-    </div>
-    <div class="info">
-      <div class="info-label">Weekly &middot; 7-day window</div>
-      <div class="info-rem" id="w-rem">-<em>% left</em></div>
-      <div class="info-reset" id="w-reset">Resets -</div>
-    </div>
+  <!-- auth screen: shown instead of cards when not logged in -->
+  <div class="auth-screen" id="auth-screen">
+    <div class="auth-msg" id="auth-msg">Not logged in to Claude.<br>Sign in in your browser, then click Refresh.</div>
+    <button class="primary auth-login" onclick="doLogin()">Log in to Claude</button>
   </div>
 
   <div class="err" id="err"></div>
 
   <div class="footer">
-    <div class="btns">
+    <div class="btns" id="scale-btns">
       <button class="sz-btn" onclick="changeScale(-0.1)" title="Smaller">A−</button>
       <button class="sz-btn" onclick="changeScale(0.1)"  title="Larger">A+</button>
       <span class="ts" id="ts">-</span>
     </div>
-    <div class="btns">
+    <div class="btns" id="footer-btns">
       <button onclick="doQuit()">Quit</button>
       <button class="primary" id="ref-btn" onclick="doRefresh()">Refresh</button>
     </div>
@@ -194,8 +210,16 @@ function setArc(id, used) {
   el.style.stroke = color(used);
 }
 
+function _showCards(yes) {
+  document.getElementById('cards').style.display = yes ? 'block' : 'none';
+  document.getElementById('auth-screen').style.display = yes ? 'none' : 'flex';
+  document.getElementById('scale-btns').style.visibility = yes ? 'visible' : 'hidden';
+  document.getElementById('footer-btns').style.display = yes ? 'flex' : 'none';
+}
+
 function updateUsage(d) {
   hasData = true;
+  _showCards(true);
   document.getElementById('err').style.display = 'none';
   const su = d.session_pct_used, sr = Math.round(100 - su);
   const wu = d.weekly_pct_used,  wr = Math.round(100 - wu);
@@ -218,14 +242,20 @@ function updateUsage(d) {
 function showError(msg) {
   const b = document.getElementById('ref-btn');
   b.textContent = 'Refresh'; b.disabled = false;
-  if (hasData) {
+  const isAuth = msg.startsWith('AUTH:');
+  const displayMsg = isAuth ? msg.slice(5) : msg;
+  if (isAuth) {
+    _showCards(false);
+    document.getElementById('ts').textContent = '';
+  } else if (hasData) {
     const ts = document.getElementById('ts');
-    ts.textContent = '⚠ Refresh failed';
-    ts.title = msg;
+    const short = displayMsg.length > 50 ? displayMsg.slice(0, 47) + '…' : displayMsg;
+    ts.textContent = '⚠ ' + short;
+    ts.title = displayMsg;
   } else {
     const el = document.getElementById('err');
     el.style.display = 'block';
-    el.textContent = '⚠ ' + msg;
+    el.textContent = '⚠ ' + displayMsg;
   }
 }
 
@@ -245,6 +275,7 @@ function doRefresh() {
   _post('refresh');
 }
 function doQuit() { _post('quit'); }
+function doLogin() { _post('login'); }
 
 initArc('s-arc');
 initArc('w-arc');

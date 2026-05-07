@@ -31,7 +31,14 @@ pyinstaller app_windows.py --onefile --windowed --name ClaudeTicker
 dist\ClaudeTicker.exe
 ```
 
-The app appears in the **system tray** (bottom-right corner). Left-click the tray icon to show/hide the popup. Right-click → Quit.
+The app appears in the **system tray** (bottom-right corner). Left-click the tray icon to show/hide the popup. Right-click for the menu:
+
+| Menu item | Action |
+|-----------|--------|
+| Login to Claude.ai | Opens claude.ai in your browser |
+| Logout | Opens the Claude.ai logout page |
+| Refresh | Fetches fresh usage data immediately |
+| Quit | Exits the app |
 
 > **Prerequisites:** Windows 10 or later · Python 3.11–3.13 (3.14 not yet supported — see [note](#python-version)) · WebView2 runtime (already installed on most Windows 10/11 machines — if missing, grab it from [Microsoft](https://developer.microsoft.com/en-us/microsoft-edge/webview2/)) · Chrome, Firefox, Brave, or Edge logged into [claude.ai](https://claude.ai)
 
@@ -53,11 +60,20 @@ pip3 install -r requirements-macos.txt
 
 **Step 3 — Install & run**
 ```bash
-cp -r dist/ClaudeTicker.app /Applications/
+sudo cp -r dist/ClaudeTicker.app /Applications/
 open /Applications/ClaudeTicker.app
 ```
 
-The app appears in the **menu bar**. Click it to open the popup.
+> **No sudo?** Drag `dist/ClaudeTicker.app` into `/Applications` in Finder instead.
+
+The app appears in the **menu bar**. Left-click to open the popup. Right-click for the menu:
+
+| Menu item | Action |
+|-----------|--------|
+| Login to Claude.ai | Opens claude.ai in your browser |
+| Logout | Opens the Claude.ai logout page |
+| Refresh | Fetches fresh usage data immediately |
+| Quit | Exits the app |
 
 > **First launch:** Right-click → Open (macOS Gatekeeper). After that, launch normally.  
 > **Keychain prompt:** Allow it — this lets the app read your browser's session cookie.  
@@ -192,7 +208,7 @@ print(f'Weekly:  {d.weekly_pct_used:.0f}% used | resets {weekly_reset_local_str(
 
 | Symptom | Most likely cause | Fix |
 |---------|------------------|-----|
-| `Claude ⚠` in menu bar | Cookie expired or not logged in | Log out and back into [claude.ai](https://claude.ai) in Chrome |
+| `Claude ⚠` in menu bar / "Not logged in" screen | Cookie expired or not logged in | Click **Login to Claude.ai** in the right-click menu or the popup button, log in, then click Refresh |
 | `Could not find org UUID` | `/api/bootstrap` changed | Run `python3 discover.py` |
 | `Claude ⚠` after an Anthropic update | API endpoint or response shape changed | Run `python3 discover.py` and open an issue |
 | Keychain prompt denied (macOS) | Denied on first run | System Settings → Privacy & Security → Keychain Access |

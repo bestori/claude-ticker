@@ -6,6 +6,7 @@ Click → NSPopover with graphical progress rings.
 """
 
 import json
+import subprocess
 import threading
 from datetime import datetime
 
@@ -63,16 +64,53 @@ class AppDelegate(NSObject):
         btn.setTitle_("Claude …")
         btn.setTarget_(self)
         btn.setAction_("onStatusClick:")
-        btn.sendActionOn_(AppKit.NSEventMaskLeftMouseDown)
+        btn.sendActionOn_(
+            AppKit.NSEventMaskLeftMouseDown | AppKit.NSEventMaskRightMouseDown
+        )
+        self._menu = self._build_menu()
+
+    @objc.python_method
+    def _build_menu(self):
+        menu = AppKit.NSMenu.alloc().init()
+
+        def _item(title, sel):
+            it = AppKit.NSMenuItem.alloc().initWithTitle_action_keyEquivalent_(
+                title, sel, ""
+            )
+            it.setTarget_(self)
+            return it
+
+        menu.addItem_(_item("Login to Claude.ai", "menuOpenClaude:"))
+        menu.addItem_(_item("Logout", "menuLogout:"))
+        menu.addItem_(_item("Refresh", "menuRefresh:"))
+        menu.addItem_(_item("Quit", "menuQuit:"))
+        return menu
 
     def onStatusClick_(self, sender):
-        if self._pop.isShown():
+        event = AppKit.NSApp.currentEvent()
+        if event.type() == AppKit.NSEventTypeRightMouseDown:
             self._pop.close()
+            self._item.popUpStatusItemMenu_(self._menu)
         else:
-            btn = self._item.button()
-            self._pop.showRelativeToRect_ofView_preferredEdge_(
-                btn.bounds(), btn, AppKit.NSRectEdgeMinY
-            )
+            if self._pop.isShown():
+                self._pop.close()
+            else:
+                btn = self._item.button()
+                self._pop.showRelativeToRect_ofView_preferredEdge_(
+                    btn.bounds(), btn, AppKit.NSRectEdgeMinY
+                )
+
+    def menuOpenClaude_(self, sender):
+        subprocess.Popen(["open", "https://claude.ai"])
+
+    def menuLogout_(self, sender):
+        subprocess.Popen(["open", "https://claude.ai/logout"])
+
+    def menuRefresh_(self, sender):
+        threading.Thread(target=self._fetch, daemon=True).start()
+
+    def menuQuit_(self, sender):
+        AppKit.NSApplication.sharedApplication().terminate_(None)
 
     # ── popover + webview ──────────────────────────────────────────────────
 
@@ -85,6 +123,7 @@ class AppDelegate(NSObject):
         ucc.addScriptMessageHandler_name_(self._jsh, "refresh")
         ucc.addScriptMessageHandler_name_(self._jsh, "quit")
         ucc.addScriptMessageHandler_name_(self._jsh, "scale")
+        ucc.addScriptMessageHandler_name_(self._jsh, "login")
         cfg.setUserContentController_(ucc)
 
         frame = AppKit.NSMakeRect(0, 0, 320, 290)
@@ -114,6 +153,8 @@ class AppDelegate(NSObject):
             threading.Thread(target=self._fetch, daemon=True).start()
         elif name == "quit":
             AppKit.NSApplication.sharedApplication().terminate_(None)
+        elif name == "login":
+            subprocess.Popen(["open", "https://claude.ai"])
         elif name == "scale":
             s = float(body)
             NSOperationQueue.mainQueue().addOperationWithBlock_(

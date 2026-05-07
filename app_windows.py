@@ -51,6 +51,10 @@ class _Api:
     def scale(self, val=1.0):
         self._app._apply_scale(float(val))
 
+    def login(self):
+        import webbrowser
+        webbrowser.open("https://claude.ai")
+
 
 class App:
     def __init__(self):

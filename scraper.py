@@ -77,15 +77,21 @@ def _get_org_uuids(s: requests.Session) -> list:
     data = r.json()
     seen = set()
     uuids = []
-    for m in data.get("account", {}).get("memberships", []):
+    account = data.get("account") or {}
+    if not account:
+        raise RuntimeError(
+            "AUTH:Not logged in to Claude in your browser. "
+            "Open claude.ai, sign in, then click Refresh."
+        )
+    for m in account.get("memberships", []):
         uid = (m.get("organization") or {}).get("uuid")
         if uid and uid not in seen:
             seen.add(uid)
             uuids.append(uid)
     if not uuids:
         raise RuntimeError(
-            "Could not find org UUID in /api/bootstrap response. "
-            "Are you logged in to claude.ai in Chrome?"
+            "AUTH:Not logged in to Claude in your browser. "
+            "Open claude.ai, sign in, then click Refresh."
         )
     return uuids
 
@@ -163,6 +169,9 @@ def fetch_usage() -> UsageData:
     # If resets_at is in the past the server hasn't refreshed yet;
     # advance forward by the window size until it's future.
     sess_reset = _next_reset(sess_raw, window_hours=5)
+    if sess_reset is None:
+        # API omits resets_at when session just reset; assume 5h from now
+        sess_reset = datetime.now(timezone.utc) + timedelta(hours=5)
     week_reset = _next_reset(week_raw, window_hours=7 * 24)
 
     return UsageData(
