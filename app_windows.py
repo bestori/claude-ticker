@@ -32,17 +32,34 @@ def _pressure_color(pct_used: float) -> str:
     return "#FF3B30"
 
 
+def _load_font(size: int) -> ImageFont.ImageFont:
+    # Arial Bold renders well at small tray icon sizes on Windows.
+    for path in ("arialbd.ttf", "arial.ttf",
+                 r"C:\Windows\Fonts\arialbd.ttf",
+                 r"C:\Windows\Fonts\arial.ttf"):
+        try:
+            return ImageFont.truetype(path, size)
+        except Exception:
+            pass
+    try:
+        return ImageFont.load_default(size=size)
+    except TypeError:
+        return ImageFont.load_default()
+
+
 def _make_tray_image(text: str | None = None, bg: str = "#cc785c") -> Image.Image:
     img = Image.new("RGBA", (64, 64), (0, 0, 0, 0))
     d = ImageDraw.Draw(img)
     d.rounded_rectangle([0, 0, 63, 63], radius=12, fill=bg)
-    label = text if text is not None else "C"
-    size = 18 if text is not None else 28
-    try:
-        font = ImageFont.load_default(size=size)
-    except TypeError:
-        font = ImageFont.load_default()
-    d.text((32, 32), label, fill="#fff", font=font, anchor="mm")
+    if text is not None:
+        # Drop "%" — maximise digit size for readability at 16×16 display size.
+        digits = text.rstrip("%")
+        size = 44 if len(digits) == 1 else (36 if len(digits) == 2 else 28)
+        font = _load_font(size)
+        d.text((32, 33), digits, fill="#fff", font=font, anchor="mm")
+    else:
+        font = _load_font(28)
+        d.text((32, 32), "C", fill="#fff", font=font, anchor="mm")
     return img
 
 
@@ -82,7 +99,7 @@ class App:
         self._ready = False
         self._pending = None
         self._scale = 1.0
-        self._simple_view = False
+        self._simple_view = True
         self._last_session_used = None  # pct_used (0-100) for icon refresh
 
     def _toggle(self, *_):

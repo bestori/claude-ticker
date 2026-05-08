@@ -16,17 +16,21 @@
 
 ### Windows
 
-**Step 1 — Install dependencies**
+**Step 1 — Install Python** (if not already installed)
+
+Download from [python.org/downloads](https://www.python.org/downloads/) — check **"Add Python to PATH"** during install. Supported: Python 3.11–3.13.
+
+**Step 2 — Install dependencies**
 ```bat
-pip install -r requirements-windows.txt
+py -m pip install -r requirements-windows.txt
 ```
 
-**Step 2 — Build the .exe**
+**Step 3 — Build the .exe**
 ```bat
-pyinstaller app_windows.py --onefile --windowed --name ClaudeTicker
+py -m PyInstaller app_windows.py --onefile --windowed --name ClaudeTicker
 ```
 
-**Step 3 — Run it**
+**Step 4 — Run it**
 ```bat
 dist\ClaudeTicker.exe
 ```
@@ -191,7 +195,7 @@ python3 app.py
 
 ### Windows
 ```bat
-python app_windows.py
+py app_windows.py
 ```
 
 To test just the data fetching on either platform:
@@ -219,8 +223,8 @@ print(f'Weekly:  {d.weekly_pct_used:.0f}% used | resets {weekly_reset_local_str(
 | Popup doesn't appear (Windows) | WebView2 not installed | Install [Microsoft Edge WebView2](https://developer.microsoft.com/en-us/microsoft-edge/webview2/) |
 | `Could not decrypt cookies` (Windows) | Chrome profile locked or wrong crypto backend | Close Chrome fully, retry. Or switch to Firefox in config |
 | `Unexpected COM Error` / WMI error (Windows) | Edge cookie extraction unreliable on Windows | Switch to Chrome or Firefox in config — Edge not recommended on Windows |
-| Install errors mentioning `objc` or `AppKit` (Windows) | Wrong requirements file used | Run `pip install -r requirements-windows.txt` — never use `requirements-macos.txt` on Windows |
-| `ModuleNotFoundError: No module named 'pystray'` | Wrong requirements file used | Run `pip install -r requirements-windows.txt` |
+| Install errors mentioning `objc` or `AppKit` (Windows) | Wrong requirements file used | Run `py -m pip install -r requirements-windows.txt` — never use `requirements-macos.txt` on Windows |
+| `ModuleNotFoundError: No module named 'pystray'` | Wrong requirements file used | Run `py -m pip install -r requirements-windows.txt` |
 
 If the API has moved, `discover.py` will probe a list of candidate endpoints and show you exactly what comes back:
 

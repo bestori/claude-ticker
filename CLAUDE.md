@@ -17,7 +17,7 @@ Click → popup with animated SVG arc rings, colour-coded by pressure level, and
 pip3 install -r requirements-macos.txt
 
 # Install runtime dependencies (Windows)
-pip install -r requirements-windows.txt
+py -m pip install -r requirements-windows.txt
 
 # Install dev/test dependencies (any platform, no PyObjC needed)
 pip3 install -r requirements-dev.txt
@@ -26,7 +26,7 @@ pip3 install -r requirements-dev.txt
 python3 app.py
 
 # Run directly - Windows
-python app_windows.py
+py app_windows.py
 
 # Test the scraper alone
 python3 -c "from scraper import fetch_usage, session_minutes_remaining, weekly_reset_local_str; d = fetch_usage(); print(d)"
@@ -46,7 +46,7 @@ python3 setup.py py2app
 codesign --force --deep --sign - dist/ClaudeTicker.app
 
 # Build the .exe (Windows)
-pyinstaller app_windows.py --onefile --windowed --name ClaudeTicker
+py -m PyInstaller app_windows.py --onefile --windowed --name ClaudeTicker
 
 # Install system-wide (macOS)
 cp -r dist/ClaudeTicker.app /Applications/
