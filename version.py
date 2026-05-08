@@ -17,11 +17,17 @@ def _get_version() -> str:
         return _BAKED_VERSION
     try:
         import subprocess
-        tag = subprocess.check_output(
-            ["git", "describe", "--tags", "--exact-match", "HEAD"],
-            stderr=subprocess.DEVNULL,
-            cwd=os.path.dirname(os.path.abspath(__file__)),
-        ).decode().strip().lstrip("v")
+
+        tag = (
+            subprocess.check_output(
+                ["git", "describe", "--tags", "--exact-match", "HEAD"],
+                stderr=subprocess.DEVNULL,
+                cwd=os.path.dirname(os.path.abspath(__file__)),
+            )
+            .decode()
+            .strip()
+            .lstrip("v")
+        )
         if tag:
             return tag
     except Exception:
@@ -33,7 +39,7 @@ __version__ = _get_version()
 
 
 def check_for_updates():
-    """Return (latest_version, release_url) if newer release exists, else (None, None)."""
+    """Return (latest, url) if newer release exists on GitHub, else (None, None)."""
     api = f"https://api.github.com/repos/{GITHUB_REPO}/releases/latest"
     req = urllib.request.Request(
         api, headers={"User-Agent": f"claude-ticker/{__version__}"}

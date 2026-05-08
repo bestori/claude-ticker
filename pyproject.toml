@@ -7,8 +7,9 @@ select = ["E", "F", "W", "I"]
 ignore = []
 
 [tool.ruff.lint.per-file-ignores]
-# app.py contains a minified HTML/CSS/JS string constant with intentionally long lines
+# These files contain minified HTML/CSS/JS string constants with intentionally long lines
 "app.py" = ["E501"]
+"ui_shared.py" = ["E501"]
 
 [tool.ruff.format]
 quote-style = "double"
