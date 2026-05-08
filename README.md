@@ -40,7 +40,7 @@ The app appears in the **system tray** (bottom-right corner). Left-click the tra
 | Refresh | Fetches fresh usage data immediately |
 | Quit | Exits the app |
 
-> **Prerequisites:** Windows 10 or later · Python 3.11–3.13 (3.14 not yet supported — see [note](#python-version)) · WebView2 runtime (already installed on most Windows 10/11 machines — if missing, grab it from [Microsoft](https://developer.microsoft.com/en-us/microsoft-edge/webview2/)) · Chrome, Firefox, Brave, or Edge logged into [claude.ai](https://claude.ai)
+> **Prerequisites:** Windows 10 or later · Python 3.11–3.13 (3.14 not yet supported — see [note](#python-version)) · WebView2 runtime (already installed on most Windows 10/11 machines — if missing, grab it from [Microsoft](https://developer.microsoft.com/en-us/microsoft-edge/webview2/)) · Chrome or Firefox logged into [claude.ai](https://claude.ai) (Edge cookie extraction is unreliable on Windows — use Chrome or Firefox)
 
 > **Auto-start:** Drop a shortcut to `ClaudeTicker.exe` into `shell:startup`.
 
@@ -168,7 +168,10 @@ On first launch, macOS will ask for **Keychain access** - that's the app asking 
 
 ## Browser configuration
 
-Chrome by default. To use something else, create `~/.config/claude-ticker/config.json`:
+Chrome by default. To use something else, create the config file:
+
+- **macOS / Linux:** `~/.config/claude-ticker/config.json`
+- **Windows:** `C:\Users\<your-username>\.config\claude-ticker\config.json`
 
 ```json
 { "browser": "firefox" }
@@ -214,7 +217,8 @@ print(f'Weekly:  {d.weekly_pct_used:.0f}% used | resets {weekly_reset_local_str(
 | Keychain prompt denied (macOS) | Denied on first run | System Settings → Privacy & Security → Keychain Access |
 | Shows `…` forever | First fetch still in progress | Wait 30s; if stuck, quit and restart |
 | Popup doesn't appear (Windows) | WebView2 not installed | Install [Microsoft Edge WebView2](https://developer.microsoft.com/en-us/microsoft-edge/webview2/) |
-| `Could not decrypt cookies` (Windows) | Chrome profile locked or wrong crypto backend | Close Chrome fully, retry. Or switch to Firefox/Edge in config |
+| `Could not decrypt cookies` (Windows) | Chrome profile locked or wrong crypto backend | Close Chrome fully, retry. Or switch to Firefox in config |
+| `Unexpected COM Error` / WMI error (Windows) | Edge cookie extraction unreliable on Windows | Switch to Chrome or Firefox in config — Edge not recommended on Windows |
 | Install errors mentioning `objc` or `AppKit` (Windows) | Wrong requirements file used | Run `pip install -r requirements-windows.txt` — never use `requirements-macos.txt` on Windows |
 | `ModuleNotFoundError: No module named 'pystray'` | Wrong requirements file used | Run `pip install -r requirements-windows.txt` |
 

@@ -8,6 +8,7 @@ Click → NSPopover with graphical progress rings.
 import json
 import subprocess
 import threading
+import webbrowser
 from datetime import datetime
 
 import AppKit
@@ -15,6 +16,7 @@ import objc
 import WebKit
 from Foundation import NSObject, NSOperationQueue, NSTimer
 
+import version
 from scraper import fetch_usage, session_minutes_remaining, weekly_reset_local_str
 from ui_shared import HTML, _fmt
 
@@ -83,6 +85,9 @@ class AppDelegate(NSObject):
         menu.addItem_(_item("Login to Claude.ai", "menuOpenClaude:"))
         menu.addItem_(_item("Logout", "menuLogout:"))
         menu.addItem_(_item("Refresh", "menuRefresh:"))
+        menu.addItem_(AppKit.NSMenuItem.separatorItem())
+        menu.addItem_(_item("Check for Updates…", "menuCheckUpdates:"))
+        menu.addItem_(AppKit.NSMenuItem.separatorItem())
         menu.addItem_(_item("Quit", "menuQuit:"))
         return menu
 
@@ -108,6 +113,20 @@ class AppDelegate(NSObject):
 
     def menuRefresh_(self, sender):
         threading.Thread(target=self._fetch, daemon=True).start()
+
+    def menuCheckUpdates_(self, sender):
+        def _run():
+            latest, url = version.check_for_updates()
+            target = url if latest else version.RELEASES_URL
+            webbrowser.open(target)
+            if latest:
+                NSOperationQueue.mainQueue().addOperationWithBlock_(
+                    lambda: self._item.button().setTitle_(
+                        f"Claude  ↑ v{latest} available"
+                    )
+                )
+
+        threading.Thread(target=_run, daemon=True).start()
 
     def menuQuit_(self, sender):
         AppKit.NSApplication.sharedApplication().terminate_(None)

@@ -3,28 +3,46 @@ Claude Ticker - Windows system tray app (pystray + pywebview)
 
 Tray icon shows:  Claude  S:37%  W:26%  |  13m
 Left-click → floating popup with graphical arc rings (bottom-right, above taskbar).
+Simple View: renders session-remaining % directly into the tray icon image.
 """
 
 import ctypes
 import json
 import threading
 import time
+import webbrowser
 from datetime import datetime
 
 import pystray
 import webview
-from PIL import Image, ImageDraw
+from PIL import Image, ImageDraw, ImageFont
 
+import version
 from scraper import fetch_usage, session_minutes_remaining, weekly_reset_local_str
 from ui_shared import HTML, _fmt
 
-BASE_W, BASE_H = 320, 290
+BASE_W, BASE_H = 320, 300
 
 
-def _make_tray_image() -> Image.Image:
+def _pressure_color(pct_used: float) -> str:
+    if pct_used < 60:
+        return "#34C759"
+    if pct_used < 85:
+        return "#FF9500"
+    return "#FF3B30"
+
+
+def _make_tray_image(text: str | None = None, bg: str = "#cc785c") -> Image.Image:
     img = Image.new("RGBA", (64, 64), (0, 0, 0, 0))
     d = ImageDraw.Draw(img)
-    d.rounded_rectangle([0, 0, 63, 63], radius=12, fill="#cc785c")
+    d.rounded_rectangle([0, 0, 63, 63], radius=12, fill=bg)
+    label = text if text is not None else "C"
+    size = 18 if text is not None else 28
+    try:
+        font = ImageFont.load_default(size=size)
+    except TypeError:
+        font = ImageFont.load_default()
+    d.text((32, 32), label, fill="#fff", font=font, anchor="mm")
     return img
 
 
@@ -52,7 +70,6 @@ class _Api:
         self._app._apply_scale(float(val))
 
     def login(self):
-        import webbrowser
         webbrowser.open("https://claude.ai")
 
 
@@ -65,6 +82,8 @@ class App:
         self._ready = False
         self._pending = None
         self._scale = 1.0
+        self._simple_view = False
+        self._last_session_used = None  # pct_used (0-100) for icon refresh
 
     def _toggle(self, *_):
         if self._window is None:
@@ -88,6 +107,14 @@ class App:
             self._window.evaluate_js(f"updateUsage({json.dumps(self._pending)});")
             self._pending = None
 
+    def _update_icon(self):
+        if self._simple_view and self._last_session_used is not None:
+            rem = round(100 - self._last_session_used)
+            bg = _pressure_color(self._last_session_used)
+            self._icon.icon = _make_tray_image(text=f"{rem}%", bg=bg)
+        else:
+            self._icon.icon = _make_tray_image()
+
     def _fetch(self):
         if not self._lock.acquire(blocking=False):
             return
@@ -99,6 +126,7 @@ class App:
             s_rem = 100.0 - d.session_pct_used
             w_rem = 100.0 - d.weekly_pct_used
 
+            self._last_session_used = d.session_pct_used
             title = f"Claude  S:{s_rem:.0f}%  W:{w_rem:.0f}%  |  {cd}"
             payload = {
                 "session_pct_used": d.session_pct_used,
@@ -108,6 +136,7 @@ class App:
                 "updated_at": datetime.now().strftime("%H:%M:%S"),
             }
             self._icon.title = title
+            self._update_icon()
             if self._ready:
                 self._window.evaluate_js(f"updateUsage({json.dumps(payload)});")
             else:
@@ -128,6 +157,28 @@ class App:
             x, y = _screen_pos(w, h)
             self._window.move(x, y)
 
+    def _toggle_simple_view(self, icon, item):
+        self._simple_view = not self._simple_view
+        self._update_icon()
+
+    def _check_updates(self, *_):
+        def _run():
+            latest, url = version.check_for_updates()
+            if latest:
+                old_title = self._icon.title
+                self._icon.title = f"Update available: v{latest} — opening browser…"
+                webbrowser.open(url)
+                time.sleep(5)
+                self._icon.title = old_title
+            else:
+                old_title = self._icon.title
+                self._icon.title = f"Up to date (v{version.__version__})"
+                webbrowser.open(version.RELEASES_URL)
+                time.sleep(4)
+                self._icon.title = old_title
+
+        threading.Thread(target=_run, daemon=True).start()
+
     def _timer(self):
         while True:
             time.sleep(120)
@@ -140,6 +191,14 @@ class App:
             title="Claude …",
             menu=pystray.Menu(
                 pystray.MenuItem("Show / Hide", self._toggle, default=True),
+                pystray.MenuItem(
+                    "Simple View (session % in icon)",
+                    self._toggle_simple_view,
+                    checked=lambda item: self._simple_view,
+                ),
+                pystray.Menu.SEPARATOR,
+                pystray.MenuItem("Check for Updates…", self._check_updates),
+                pystray.Menu.SEPARATOR,
                 pystray.MenuItem("Quit", self._stop),
             ),
         )

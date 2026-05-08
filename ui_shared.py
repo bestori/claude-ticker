@@ -100,7 +100,7 @@ button:hover{background:var(--btn-h)}
 button:disabled{opacity:.4;cursor:default}
 .primary{background:var(--accent);color:#fff}
 .primary:hover{opacity:.85}
-.sz-btn{font-size:11px;padding:4px 8px;color:var(--sub)}
+.sz-btn{font-size:12px;padding:4px 10px;color:var(--text);background:var(--btn);border-radius:6px;font-weight:600}
 
 /* ── error ── */
 .err{

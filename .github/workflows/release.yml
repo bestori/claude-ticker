@@ -1,0 +1,55 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  release:
+    name: Create GitHub Release
+    runs-on: macos-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # needed for git describe
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Cache pip
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: pip-3.12-${{ hashFiles('requirements-dev.txt') }}
+          restore-keys: pip-3.12-
+
+      - name: Install dev dependencies
+        run: pip install -r requirements-dev.txt
+
+      - name: Lint
+        run: |
+          ruff check .
+          ruff format --check .
+
+      - name: Test
+        run: pytest tests/ -v --tb=short
+
+      - name: Patch version.py
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          sed -i '' "s/_BAKED_VERSION = \".*\"/_BAKED_VERSION = \"$VERSION\"/" version.py
+          echo "Patched _BAKED_VERSION to $VERSION"
+          python3 -c "import version; print('version =', version.__version__)"
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" \
+            --title "Claude Ticker $GITHUB_REF_NAME" \
+            --generate-notes \
+            --draft=false
