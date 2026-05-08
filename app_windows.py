@@ -32,11 +32,19 @@ def _pressure_color(pct_used: float) -> str:
     return "#FF3B30"
 
 
+_ICON_SIZE = 256  # large source → Windows downsamples with better antialiasing
+
+
 def _load_font(size: int) -> ImageFont.ImageFont:
-    # Arial Bold renders well at small tray icon sizes on Windows.
-    for path in ("arialbd.ttf", "arial.ttf",
-                 r"C:\Windows\Fonts\arialbd.ttf",
-                 r"C:\Windows\Fonts\arial.ttf"):
+    # Segoe UI Bold is Windows' native UI font — ClearType-tuned, best at small sizes.
+    for path in (
+        r"C:\Windows\Fonts\segoeuib.ttf",
+        r"C:\Windows\Fonts\segoeui.ttf",
+        r"C:\Windows\Fonts\arialbd.ttf",
+        r"C:\Windows\Fonts\arial.ttf",
+        "segoeuib.ttf",
+        "arialbd.ttf",
+    ):
         try:
             return ImageFont.truetype(path, size)
         except Exception:
@@ -47,19 +55,36 @@ def _load_font(size: int) -> ImageFont.ImageFont:
         return ImageFont.load_default()
 
 
-def _make_tray_image(text: str | None = None, bg: str = "#cc785c") -> Image.Image:
-    img = Image.new("RGBA", (64, 64), (0, 0, 0, 0))
+def _fit_font(label: str, max_px: int) -> ImageFont.ImageFont:
+    """Binary-search for largest font size where label fits within max_px square."""
+    lo, hi = 10, max_px
+    best = _load_font(lo)
+    while lo <= hi:
+        mid = (lo + hi) // 2
+        font = _load_font(mid)
+        try:
+            bb = font.getbbox(label)
+            w, h = bb[2] - bb[0], bb[3] - bb[1]
+        except AttributeError:
+            w, h = font.getsize(label)
+        if w <= max_px and h <= max_px:
+            best = font
+            lo = mid + 1
+        else:
+            hi = mid - 1
+    return best
+
+
+def _make_tray_image(text: str | None = None, fg: str = "#ffffff") -> Image.Image:
+    S = _ICON_SIZE
+    pad = S // 12  # small inset so glyphs clear rounded corners
+    img = Image.new("RGBA", (S, S), (0, 0, 0, 0))
     d = ImageDraw.Draw(img)
-    d.rounded_rectangle([0, 0, 63, 63], radius=12, fill=bg)
-    if text is not None:
-        # Drop "%" — maximise digit size for readability at 16×16 display size.
-        digits = text.rstrip("%")
-        size = 44 if len(digits) == 1 else (36 if len(digits) == 2 else 28)
-        font = _load_font(size)
-        d.text((32, 33), digits, fill="#fff", font=font, anchor="mm")
-    else:
-        font = _load_font(28)
-        d.text((32, 32), "C", fill="#fff", font=font, anchor="mm")
+    d.rounded_rectangle([0, 0, S - 1, S - 1], radius=S // 8, fill="#000000")
+    label = text.rstrip("%") if text is not None else "C"
+    color = fg if text is not None else "#cc785c"
+    font = _fit_font(label, S - pad * 2)
+    d.text((S // 2, S // 2), label, fill=color, font=font, anchor="mm")
     return img
 
 
@@ -127,8 +152,8 @@ class App:
     def _update_icon(self):
         if self._simple_view and self._last_session_used is not None:
             rem = round(100 - self._last_session_used)
-            bg = _pressure_color(self._last_session_used)
-            self._icon.icon = _make_tray_image(text=f"{rem}%", bg=bg)
+            fg = _pressure_color(self._last_session_used)
+            self._icon.icon = _make_tray_image(text=f"{rem}%", fg=fg)
         else:
             self._icon.icon = _make_tray_image()
 
