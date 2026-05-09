@@ -234,7 +234,7 @@ class TestFetchUsage:
         bad_bootstrap = {"account": {"memberships": []}}
         ms = _make_mock_session(bootstrap=bad_bootstrap)
         p1, p2, p3 = self._patch(ms)
-        with p1, p2, p3, pytest.raises(RuntimeError, match="org UUID"):
+        with p1, p2, p3, pytest.raises(RuntimeError, match="AUTH:"):
             fetch_usage()
 
     def test_uses_configured_browser(self):
