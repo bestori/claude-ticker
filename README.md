@@ -83,7 +83,7 @@ The app appears in the **menu bar**. Left-click to open the popup. Right-click f
 > **Keychain prompt:** Allow it — this lets the app read your browser's session cookie.  
 > **Auto-start:** System Settings → General → Login Items → `+` → pick `ClaudeTicker.app`.
 
-> **Prerequisites:** macOS 13 Ventura or later (tested on macOS 15 Sequoia) · Python 3.11–3.13 (3.14 not yet supported — see [note](#python-version)) · Chrome, Firefox, Safari, Brave, or Edge logged into [claude.ai](https://claude.ai)
+> **Prerequisites:** macOS 13 Ventura or later (tested on macOS 15 Sequoia) · Apple Silicon (arm64) native — Intel Macs not supported · Python 3.11–3.13 (3.14 not yet supported — see [note](#python-version)) · Chrome, Firefox, Safari, Brave, or Edge logged into [claude.ai](https://claude.ai)
 
 ---
 
@@ -221,6 +221,7 @@ print(f'Weekly:  {d.weekly_pct_used:.0f}% used | resets {weekly_reset_local_str(
 | Keychain prompt denied (macOS) | Denied on first run | System Settings → Privacy & Security → Keychain Access |
 | Shows `…` forever | First fetch still in progress | Wait 30s; if stuck, quit and restart |
 | Popup doesn't appear (Windows) | WebView2 not installed | Install [Microsoft Edge WebView2](https://developer.microsoft.com/en-us/microsoft-edge/webview2/) |
+| "Support Ending for Intel-based Apps" notification | Old Intel build still in `/Applications/` | Rebuild and re-copy: `python3 setup.py py2app && cp -r dist/ClaudeTicker.app /Applications/ && codesign --force --deep --sign - /Applications/ClaudeTicker.app` |
 | `Could not decrypt cookies` (Windows) | Chrome profile locked or wrong crypto backend | Close Chrome fully, retry. Or switch to Firefox in config |
 | `Unexpected COM Error` / WMI error (Windows) | Edge cookie extraction unreliable on Windows | Switch to Chrome or Firefox in config — Edge not recommended on Windows |
 | Install errors mentioning `objc` or `AppKit` (Windows) | Wrong requirements file used | Run `py -m pip install -r requirements-windows.txt` — never use `requirements-macos.txt` on Windows |
