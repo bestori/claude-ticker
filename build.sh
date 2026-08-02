@@ -2,6 +2,14 @@
 # Build Claude Ticker as a macOS .app bundle
 set -euo pipefail
 
+PYARCH=$(python3 -c 'import platform; print(platform.machine())')
+if [[ "$PYARCH" != "arm64" ]]; then
+  echo "error: python3 runs as $PYARCH — need native arm64 Python." >&2
+  echo "Intel builds are flagged by macOS ('Support Ending for Intel-based Apps')." >&2
+  echo "Reinstall: brew install python  (native Homebrew, not Rosetta)" >&2
+  exit 1
+fi
+
 echo "==> Installing Python dependencies…"
 pip3 install -r requirements-macos.txt
 
