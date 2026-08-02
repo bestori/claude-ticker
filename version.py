@@ -5,7 +5,7 @@ import urllib.request
 
 # Patched by CI during release builds (see .github/workflows/release.yml).
 # In development, _get_version() reads from the git tag instead.
-_BAKED_VERSION = "1"
+_BAKED_VERSION = "2"
 
 GITHUB_REPO = "bestori/claude-ticker"
 RELEASES_URL = f"https://github.com/{GITHUB_REPO}/releases"

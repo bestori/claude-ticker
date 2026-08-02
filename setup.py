@@ -19,8 +19,8 @@ OPTIONS = {
         "CFBundleName": "ClaudeTicker",
         "CFBundleDisplayName": "Claude Ticker",
         "CFBundleIdentifier": "com.user.claude-ticker",
-        "CFBundleVersion": "1.1.0",
-        "CFBundleShortVersionString": "1.1",
+        "CFBundleVersion": "2.0.0",
+        "CFBundleShortVersionString": "2.0",
         "LSUIElement": True,
         "NSAppleEventsUsageDescription": (
             "Claude Ticker reads browser cookies for authentication."
