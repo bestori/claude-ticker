@@ -191,11 +191,11 @@ If the response schema has changed (different key names), update the field
 lookups in `fetch_usage()`:
 
 ```python
-five  = data.get("five_hour")  or {}   # ← update key if renamed
-seven = data.get("seven_day")  or {}   # ← update key if renamed
+five = data.get("five_hour") or {}  # ← update key if renamed
+seven = data.get("seven_day") or {}  # ← update key if renamed
 
-session_pct_used = float(five.get("utilization") or 0)   # ← update field
-weekly_pct_used  = float(seven.get("utilization") or 0)  # ← update field
+session_pct_used = float(five.get("utilization") or 0)  # ← update field
+weekly_pct_used = float(seven.get("utilization") or 0)  # ← update field
 ```
 
 Add or update the corresponding tests in `tests/test_scraper.py` to cover the
