@@ -8,11 +8,15 @@ Supported keys
 browser : str
     Which browser to read cookies from. One of: chrome, firefox, safari,
     brave, edge, chromium. Defaults to "chrome".
+laptop_mode : bool
+    Short menu bar text ("CLD 91%": session % left only) for crowded notch
+    menu bars. Toggled from the popup switch. Defaults to false.
 
 Example config file
 -------------------
 {
-  "browser": "firefox"
+  "browser": "firefox",
+  "laptop_mode": true
 }
 
 Any unknown keys are silently ignored. Any error reading or parsing the file
@@ -56,6 +60,11 @@ def get_browser() -> str:
     if not isinstance(value, str) or value.lower() not in SUPPORTED_BROWSERS:
         return DEFAULT_CONFIG["browser"]
     return value.lower()
+
+
+def get_laptop_mode() -> bool:
+    """Return True if the short menu bar text ("CLD 91%") is enabled."""
+    return load_config().get("laptop_mode") is True
 
 
 def save_config(updates: dict) -> None:

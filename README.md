@@ -132,7 +132,7 @@ Two cards with animated SVG arc rings, one for each limit window. The rings fill
 | 60 – 84% | Orange |
 | 85 – 100% | Red |
 
-Fully dark-mode aware. Refreshes every 120 seconds on its own, or on demand via the Refresh button. Use the **A− / A+** buttons to scale the popup to your taste.
+Fully dark-mode aware. Refreshes every 120 seconds on its own, or on demand via the Refresh button. Use the **A− / A+** buttons to scale the popup to your taste. Flip the **Laptop** switch in the popup header for a short menu bar item (`CLD 91%`, session % left only) that fits a crowded notch menu bar.
 
 **[PRs, issues, and contributions welcome!](https://github.com/bestori/claude-ticker)**
 
@@ -216,6 +216,8 @@ print(f'Weekly:  {d.weekly_pct_used:.0f}% used | resets {weekly_reset_local_str(
 | Symptom | Most likely cause | Fix |
 |---------|------------------|-----|
 | `Claude ⚠` in menu bar / "Not logged in" screen | Cookie expired or not logged in | Click **Login to Claude.ai** in the right-click menu or the popup button, log in, then click Refresh |
+| "claude.ai blocked the request (HTTP 403 …)" / `403 Client Error: Forbidden for url: …/api/bootstrap` (older builds) | Cloudflare check failed: the configured browser has no valid clearance cookie — wrong browser in config, or clearance expired / bound to another network (VPN, Wi-Fi change) | Open claude.ai in the configured browser (default Chrome), sign in, click Refresh. Use another browser? Set `"browser"` in `~/.config/claude-ticker/config.json` |
+| "No claude.ai cookies found in <browser>" | App reads a browser you don't use for claude.ai | Set `"browser"` in `~/.config/claude-ticker/config.json`, or sign in to claude.ai in that browser |
 | `Could not find org UUID` | `/api/bootstrap` changed | Run `python3 discover.py` |
 | `Claude ⚠` after an Anthropic update | API endpoint or response shape changed | Run `python3 discover.py` and open an issue |
 | Keychain prompt denied (macOS) | Denied on first run | System Settings → Privacy & Security → Keychain Access |

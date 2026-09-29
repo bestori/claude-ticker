@@ -156,10 +156,25 @@ _USAGE_PAST_RESET = {
 }
 
 
-def _make_mock_session(bootstrap=None, usage=None, usage_status=200):
+def _jar(n=1):
+    """Cookie jar stand-in: only its length matters to the scraper."""
+    jar = MagicMock()
+    jar.__len__.return_value = n
+    return jar
+
+
+def _make_mock_session(
+    bootstrap=None,
+    usage=None,
+    usage_status=200,
+    bootstrap_status=200,
+    bootstrap_type="application/json",
+):
     """Return a mock requests.Session with two canned GET responses."""
     resp_bootstrap = MagicMock()
-    resp_bootstrap.ok = True
+    resp_bootstrap.ok = bootstrap_status == 200
+    resp_bootstrap.status_code = bootstrap_status
+    resp_bootstrap.headers = {"content-type": bootstrap_type}
     resp_bootstrap.json.return_value = bootstrap or _BOOTSTRAP
     resp_bootstrap.raise_for_status = MagicMock()
 
@@ -185,12 +200,8 @@ class TestFetchUsage:
     def _patch(self, mock_session, browser="chrome"):
         """Context managers to patch browser_cookie3 and requests.Session."""
         mock_bc = MagicMock()
-        mock_bc.chrome.return_value = MagicMock()
-        mock_bc.firefox.return_value = MagicMock()
-        mock_bc.safari.return_value = MagicMock()
-        mock_bc.brave.return_value = MagicMock()
-        mock_bc.edge.return_value = MagicMock()
-        mock_bc.chromium.return_value = MagicMock()
+        for name in ("chrome", "firefox", "safari", "brave", "edge", "chromium"):
+            getattr(mock_bc, name).return_value = _jar()
         return (
             patch("scraper.browser_cookie3", mock_bc),
             patch("scraper.requests.Session", return_value=mock_session),
@@ -240,7 +251,7 @@ class TestFetchUsage:
     def test_uses_configured_browser(self):
         ms = _make_mock_session()
         mock_bc = MagicMock()
-        mock_bc.firefox.return_value = MagicMock()
+        mock_bc.firefox.return_value = _jar()
         with (
             patch("scraper.browser_cookie3", mock_bc),
             patch("scraper.requests.Session", return_value=ms),
@@ -248,6 +259,56 @@ class TestFetchUsage:
         ):
             fetch_usage()
         mock_bc.firefox.assert_called_once_with(domain_name=".claude.ai")
+
+    def test_empty_cookie_jar_gives_auth_message(self):
+        ms = _make_mock_session()
+        mock_bc = MagicMock()
+        mock_bc.safari.return_value = _jar(0)
+        with (
+            patch("scraper.browser_cookie3", mock_bc),
+            patch("scraper.requests.Session", return_value=ms),
+            patch("scraper.get_browser", return_value="safari"),
+            pytest.raises(
+                RuntimeError, match="AUTH:No claude.ai cookies found in Safari"
+            ),
+        ):
+            fetch_usage()
+        ms.get.assert_not_called()
+
+    def test_cloudflare_403_gives_auth_message(self):
+        ms = _make_mock_session(bootstrap_status=403, bootstrap_type="text/html")
+        p1, p2, p3 = self._patch(ms)
+        with (
+            p1,
+            p2,
+            p3,
+            pytest.raises(RuntimeError, match="AUTH:.*HTTP 403.*Cloudflare"),
+        ):
+            fetch_usage()
+
+    def test_html_body_with_200_treated_as_blocked(self):
+        ms = _make_mock_session(bootstrap_type="text/html; charset=UTF-8")
+        p1, p2, p3 = self._patch(ms)
+        with p1, p2, p3, pytest.raises(RuntimeError, match="AUTH:"):
+            fetch_usage()
+
+    @pytest.mark.parametrize(
+        "browser, token, absent",
+        [
+            ("chrome", "Chrome/", "Edg/"),
+            ("brave", "Chrome/", "Edg/"),
+            ("edge", "Edg/", "Firefox/"),
+            ("firefox", "Firefox/", "Chrome/"),
+            ("safari", "Version/", "Chrome/"),
+        ],
+    )
+    def test_user_agent_matches_browser(self, browser, token, absent):
+        ms = _make_mock_session()
+        p1, p2, p3 = self._patch(ms, browser=browser)
+        with p1, p2, p3:
+            fetch_usage()
+        ua = ms.headers["User-Agent"]
+        assert token in ua and absent not in ua
 
     def test_null_utilization_defaults_to_zero(self):
         usage = {

@@ -15,6 +15,13 @@ def _fmt(m):
     return f"{m}m" if m < 60 else f"{m // 60}h{m % 60:02d}m"
 
 
+def _title(s_rem, w_rem, cd, laptop=False):
+    """Menu bar / tray text. Laptop mode = short form for crowded notch menu bars."""
+    if laptop:
+        return f"CLD {s_rem:.0f}%"
+    return f"Claude  S:{s_rem:.0f}%  W:{w_rem:.0f}%  |  {cd}"
+
+
 HTML = """\
 <!DOCTYPE html>
 <html>
@@ -56,6 +63,16 @@ html,body{
   display:flex;align-items:center;justify-content:center;
   color:#fff;font-size:13px;font-weight:700;flex-shrink:0;
 }
+
+/* ── laptop-mode switch ── */
+.sw{margin-left:auto;display:flex;align-items:center;gap:6px;cursor:pointer;
+  font-size:11px;font-weight:500;color:var(--sub)}
+.sw input{display:none}
+.sw-track{width:30px;height:18px;border-radius:9px;background:var(--btn-h);position:relative;transition:background .2s}
+.sw-track::after{content:"";position:absolute;top:2px;left:2px;width:14px;height:14px;border-radius:50%;
+  background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.3);transition:transform .2s}
+.sw input:checked+.sw-track{background:#34C759}
+.sw input:checked+.sw-track::after{transform:translateX(12px)}
 
 /* ── cards ── */
 .card{
@@ -124,6 +141,11 @@ button:disabled{opacity:.4;cursor:default}
   <div class="hdr">
     <div class="logo">C</div>
     Claude Usage
+    <label class="sw" title="Laptop mode: short menu bar text (CLD 91%)">
+      <span>Laptop</span>
+      <input type="checkbox" id="laptop" onchange="setLaptop(this.checked)">
+      <span class="sw-track"></span>
+    </label>
   </div>
 
   <div id="cards">
@@ -246,6 +268,7 @@ function showError(msg) {
   const displayMsg = isAuth ? msg.slice(5) : msg;
   if (isAuth) {
     _showCards(false);
+    document.getElementById('auth-msg').textContent = displayMsg;
     document.getElementById('ts').textContent = '';
   } else if (hasData) {
     const ts = document.getElementById('ts');
@@ -276,6 +299,9 @@ function doRefresh() {
 }
 function doQuit() { _post('quit'); }
 function doLogin() { _post('login'); }
+function setLaptop(on) { _post('laptop', on ? 1 : 0); }
+/* called by the host once the page loads, to reflect the persisted setting */
+function setLaptopUI(on) { document.getElementById('laptop').checked = !!on; }
 
 initArc('s-arc');
 initArc('w-arc');

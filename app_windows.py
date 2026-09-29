@@ -19,7 +19,7 @@ from PIL import Image, ImageDraw, ImageFont
 
 import version
 from scraper import fetch_usage, session_minutes_remaining, weekly_reset_local_str
-from ui_shared import HTML, _fmt
+from ui_shared import HTML, _fmt, _title
 
 BASE_W, BASE_H = 320, 300
 
@@ -114,6 +114,12 @@ class _Api:
     def login(self):
         webbrowser.open("https://claude.ai")
 
+    def laptop(self, val=0):
+        # ponytail: the popup "Laptop" switch drives the existing Simple View
+        # flag; not persisted on Windows, same as the tray menu toggle.
+        self._app._simple_view = str(val) == "1"
+        self._app._update_icon()
+
 
 class App:
     def __init__(self):
@@ -145,6 +151,7 @@ class App:
 
     def _on_loaded(self):
         self._ready = True
+        self._window.evaluate_js(f"setLaptopUI({json.dumps(self._simple_view)});")
         if self._pending is not None:
             self._window.evaluate_js(f"updateUsage({json.dumps(self._pending)});")
             self._pending = None
@@ -169,7 +176,7 @@ class App:
             w_rem = 100.0 - d.weekly_pct_used
 
             self._last_session_used = d.session_pct_used
-            title = f"Claude  S:{s_rem:.0f}%  W:{w_rem:.0f}%  |  {cd}"
+            title = _title(s_rem, w_rem, cd)
             payload = {
                 "session_pct_used": d.session_pct_used,
                 "weekly_pct_used": d.weekly_pct_used,
@@ -202,6 +209,8 @@ class App:
     def _toggle_simple_view(self, icon, item):
         self._simple_view = not self._simple_view
         self._update_icon()
+        if self._ready:
+            self._window.evaluate_js(f"setLaptopUI({json.dumps(self._simple_view)});")
 
     def _check_updates(self, *_):
         def _run():

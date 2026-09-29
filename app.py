@@ -2,6 +2,7 @@
 Claude Ticker - macOS menu bar app (PyObjC + WKWebView)
 
 Status bar shows:  Claude  S:37%  W:26%  |  13m
+                   CLD 63%                       (laptop mode)
 Click → NSPopover with graphical progress rings.
 """
 
@@ -14,11 +15,12 @@ from datetime import datetime
 import AppKit
 import objc
 import WebKit
-from Foundation import NSObject, NSOperationQueue, NSTimer
+from Foundation import NSObject, NSOperationQueue, NSTimer, NSUserDefaults
 
 import version
+from config import get_laptop_mode, save_config
 from scraper import fetch_usage, session_minutes_remaining, weekly_reset_local_str
-from ui_shared import HTML, _fmt
+from ui_shared import HTML, _fmt, _title
 
 # ── JS → Python message handler ───────────────────────────────────────────────
 
@@ -45,6 +47,9 @@ class AppDelegate(NSObject):
         self._lock = threading.Lock()
         self._ready = False  # page loaded flag
         self._pending = None  # payload buffered before page ready
+        self._laptop = get_laptop_mode()  # short menu bar text ("CLD 91%")
+        self._last = None  # (s_rem, w_rem, countdown) from last good fetch
+        self._err = False  # last fetch failed
 
         self._build_status_bar()
         self._build_popover()
@@ -59,11 +64,18 @@ class AppDelegate(NSObject):
 
     @objc.python_method
     def _build_status_bar(self):
+        # ponytail: force the menu bar slot every launch so the notch never trims it.
+        # Value = points from the right screen edge; 340 lands just left of Bluetooth.
+        # "Item-0" is the autosave name macOS assigns when none is set.
+        # Cmd-drag won't stick across relaunches; make it a config key if needed.
+        NSUserDefaults.standardUserDefaults().setFloat_forKey_(
+            340.0, "NSStatusItem Preferred Position Item-0"
+        )
         self._item = AppKit.NSStatusBar.systemStatusBar().statusItemWithLength_(
             AppKit.NSVariableStatusItemLength
         )
         btn = self._item.button()
-        btn.setTitle_("Claude …")
+        btn.setTitle_(f"{self._brand()} …")
         btn.setTarget_(self)
         btn.setAction_("onStatusClick:")
         btn.sendActionOn_(
@@ -122,7 +134,7 @@ class AppDelegate(NSObject):
             if latest:
                 NSOperationQueue.mainQueue().addOperationWithBlock_(
                     lambda: self._item.button().setTitle_(
-                        f"Claude  ↑ v{latest} available"
+                        f"{self._brand()}  ↑ v{latest} available"
                     )
                 )
 
@@ -143,6 +155,7 @@ class AppDelegate(NSObject):
         ucc.addScriptMessageHandler_name_(self._jsh, "quit")
         ucc.addScriptMessageHandler_name_(self._jsh, "scale")
         ucc.addScriptMessageHandler_name_(self._jsh, "login")
+        ucc.addScriptMessageHandler_name_(self._jsh, "laptop")
         cfg.setUserContentController_(ucc)
 
         frame = AppKit.NSMakeRect(0, 0, 320, 290)
@@ -162,6 +175,9 @@ class AppDelegate(NSObject):
 
     def webView_didFinishNavigation_(self, wv, nav):
         self._ready = True
+        self._wv.evaluateJavaScript_completionHandler_(
+            f"setLaptopUI({json.dumps(self._laptop)});", None
+        )
         if self._pending is not None:
             self._push(self._pending)
             self._pending = None
@@ -179,6 +195,10 @@ class AppDelegate(NSObject):
             NSOperationQueue.mainQueue().addOperationWithBlock_(
                 lambda: self._apply_scale(s)
             )
+        elif name == "laptop":
+            self._laptop = body == "1"
+            save_config({"laptop_mode": self._laptop})
+            self._retitle()
 
     # ── timer ──────────────────────────────────────────────────────────────
 
@@ -199,7 +219,6 @@ class AppDelegate(NSObject):
             s_rem = 100.0 - d.session_pct_used
             w_rem = 100.0 - d.weekly_pct_used
 
-            title = f"Claude  S:{s_rem:.0f}%  W:{w_rem:.0f}%  |  {cd}"
             payload = {
                 "session_pct_used": d.session_pct_used,
                 "weekly_pct_used": d.weekly_pct_used,
@@ -208,7 +227,7 @@ class AppDelegate(NSObject):
                 "updated_at": datetime.now().strftime("%H:%M:%S"),
             }
             NSOperationQueue.mainQueue().addOperationWithBlock_(
-                lambda: self._apply(title, payload)
+                lambda: self._apply((s_rem, w_rem, cd), payload)
             )
         except Exception as exc:
             msg = str(exc)
@@ -219,8 +238,23 @@ class AppDelegate(NSObject):
             self._lock.release()
 
     @objc.python_method
-    def _apply(self, title, payload):
-        self._item.button().setTitle_(title)
+    def _brand(self):
+        return "CLD" if self._laptop else "Claude"
+
+    @objc.python_method
+    def _retitle(self):
+        if self._err:
+            t = f"{self._brand()} ⚠"
+        elif self._last:
+            t = _title(*self._last, laptop=self._laptop)
+        else:
+            t = f"{self._brand()} …"
+        self._item.button().setTitle_(t)
+
+    @objc.python_method
+    def _apply(self, last, payload):
+        self._last, self._err = last, False
+        self._retitle()
         if self._ready:
             self._push(payload)
         else:
@@ -240,7 +274,8 @@ class AppDelegate(NSObject):
 
     @objc.python_method
     def _apply_err(self, msg):
-        self._item.button().setTitle_("Claude ⚠")
+        self._err = True
+        self._retitle()
         if self._ready:
             self._wv.evaluateJavaScript_completionHandler_(
                 f"showError({json.dumps(msg)});", None

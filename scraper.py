@@ -30,6 +30,31 @@ BASE = "https://claude.ai"
 # Supported browser names - must match browser_cookie3 function names exactly
 _BROWSER_NAMES = frozenset({"chrome", "chromium", "brave", "firefox", "safari", "edge"})
 
+# Cloudflare scores the User-Agent against the browser that earned cf_clearance,
+# so send one that matches where the cookies came from. Chromium family = Chrome UA.
+_WIN = platform.system() == "Windows"
+_OS_CHROME = (
+    "Windows NT 10.0; Win64; x64" if _WIN else "Macintosh; Intel Mac OS X 10_15_7"
+)
+_OS_FIREFOX = (
+    "Windows NT 10.0; Win64; x64" if _WIN else "Macintosh; Intel Mac OS X 10.15"
+)
+_CHROME_UA = (
+    f"Mozilla/5.0 ({_OS_CHROME}) AppleWebKit/537.36 (KHTML, like Gecko) "
+    "Chrome/140.0.0.0 Safari/537.36"
+)
+_USER_AGENTS = {
+    "firefox": f"Mozilla/5.0 ({_OS_FIREFOX}; rv:143.0) Gecko/20100101 Firefox/143.0",
+    "safari": (
+        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 "
+        "(KHTML, like Gecko) Version/18.6 Safari/605.1.15"
+    ),
+    "edge": f"{_CHROME_UA} Edg/140.0.0.0",
+}
+_CONFIG_HINT = (
+    'Different browser? Set "browser" in ~/.config/claude-ticker/config.json.'
+)
+
 
 @dataclass
 class UsageData:
@@ -53,16 +78,17 @@ def _make_session() -> requests.Session:
             f"Could not read {browser} cookies: {e}\n"
             f"Supported browsers: {', '.join(sorted(SUPPORTED_BROWSERS))}"
         ) from e
+    if len(cookies) == 0:
+        raise RuntimeError(
+            f"AUTH:No claude.ai cookies found in {browser.capitalize()}. "
+            f"Sign in to claude.ai there, then click Refresh. {_CONFIG_HINT}"
+        )
     s = requests.Session()
     s.verify = certifi.where()
     s.cookies = cookies
     s.headers.update(
         {
-            "User-Agent": (
-                "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
-                "AppleWebKit/537.36 (KHTML, like Gecko) "
-                "Chrome/124.0.0.0 Safari/537.36"
-            ),
+            "User-Agent": _USER_AGENTS.get(browser, _CHROME_UA),
             "Accept": "application/json, */*",
             "Referer": f"{BASE}/settings",
         }
@@ -73,6 +99,16 @@ def _make_session() -> requests.Session:
 def _get_org_uuids(s: requests.Session) -> list:
     """Return all organisation UUIDs from /api/bootstrap."""
     r = s.get(f"{BASE}/api/bootstrap", timeout=10)
+    # Cloudflare answers 403/503 with an HTML challenge page when the jar lacks a
+    # valid cf_clearance (wrong browser, expired, or bound to another network).
+    # Without this check the user just sees "403 Client Error: Forbidden".
+    blocked = r.status_code in (401, 403, 503)
+    if blocked or "text/html" in r.headers.get("content-type", ""):
+        raise RuntimeError(
+            f"AUTH:claude.ai blocked the request (HTTP {r.status_code}, usually a "
+            f"Cloudflare check). Open claude.ai in {get_browser().capitalize()}, "
+            f"sign in, then click Refresh. {_CONFIG_HINT}"
+        )
     r.raise_for_status()
     data = r.json()
     seen = set()

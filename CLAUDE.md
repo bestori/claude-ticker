@@ -7,7 +7,7 @@
 
 A macOS menu bar / Windows system tray app that shows Claude.ai plan usage (session + weekly) with a countdown to reset. It pulls live data from a browser's session cookies → claude.ai internal API, and refreshes every 120 seconds.
 
-Menu bar: `Claude  S:37%  W:26%  |  13m`
+Menu bar: `Claude  S:37%  W:26%  |  13m` — or `CLD 63%` in laptop mode (popup switch, persisted as `laptop_mode` in config.json).
 Click → popup with animated SVG arc rings, colour-coded by pressure level, and reset countdowns for both windows.
 
 ## Commands
@@ -63,7 +63,7 @@ app_windows.py       Windows only: pystray tray icon + pywebview floating window
                      positioned bottom-right above taskbar, same HTML as macOS
 scraper.py           All HTTP logic - cookie extraction, bootstrap call,
                      usage API call, reset-time arithmetic (cross-platform)
-config.py            Reads ~/.config/claude-ticker/config.json for browser selection
+config.py            Reads/writes ~/.config/claude-ticker/config.json (browser, laptop_mode)
 discover.py          One-shot helper to probe API endpoints (run when scraper breaks)
 setup.py             py2app config - produces dist/ClaudeTicker.app (macOS only)
 tests/               Unit tests for scraper.py and config.py (no network I/O)
@@ -78,9 +78,13 @@ tests/               Unit tests for scraper.py and config.py (no network I/O)
 
 **Key detail - multiple org UUIDs:** The bootstrap endpoint returns multiple org memberships. Some return 403 on the usage endpoint. `fetch_usage()` tries all UUIDs in order and uses the first that returns 200.
 
+**Key detail - Cloudflare:** `/api/bootstrap` sits behind Cloudflare. `sessionKey` alone gets a 403 HTML challenge; the full jar (`cf_clearance`, `__cf_bm`) is required, and the clearance is bound to IP + browser, so a network change causes 403s until the browser revisits claude.ai. `_get_org_uuids()` maps 401/403/503 or any HTML body to an `AUTH:` message (friendly screen with actionable text instead of a raw `403 Client Error`), `_make_session()` raises `AUTH:` early when the jar is empty (wrong browser configured), and the User-Agent matches the configured browser.
+
 **Key detail - `resets_at` handling:** The API sometimes returns a timestamp already in the past. `_next_reset()` in `scraper.py` advances it by the window size until it's future.
 
 **Key detail - `@objc.python_method`:** PyObjC registers all methods on NSObject subclasses as ObjC selectors. Private helper methods with extra arguments (e.g. `_apply(self, title, payload)`) must be decorated with `@objc.python_method` to prevent registration failures.
+
+**Key detail - menu bar slot:** `_build_status_bar()` writes `NSStatusItem Preferred Position Item-0` (points from the right screen edge) to user defaults on every launch, before creating the status item. macOS sorts status items by that value and hides whatever no longer fits right of the notch, so the low value keeps the ticker next to the system icons instead of being trimmed. `Item-0` is the name macOS auto-assigns when no `autosaveName` is set. Trade-off: Cmd-dragging the item does not persist across relaunches.
 
 **Key detail - browser dispatch:** `scraper._make_session()` uses `getattr(browser_cookie3, browser)` (not a pre-built dict) so that `browser_cookie3` can be mocked cleanly in tests.
 

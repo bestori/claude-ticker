@@ -7,7 +7,13 @@ import json
 import pytest
 
 import config as cfg
-from config import DEFAULT_CONFIG, SUPPORTED_BROWSERS, get_browser, load_config
+from config import (
+    DEFAULT_CONFIG,
+    SUPPORTED_BROWSERS,
+    get_browser,
+    get_laptop_mode,
+    load_config,
+)
 
 # ── load_config ───────────────────────────────────────────────────────────────
 
@@ -138,3 +144,24 @@ class TestSaveConfig:
         saved = json.loads(config_file.read_text())
         assert saved["browser"] == "edge"
         assert saved["other"] == "kept"
+
+
+# ── get_laptop_mode ───────────────────────────────────────────────────────────
+
+
+class TestGetLaptopMode:
+    def test_defaults_to_false(self, tmp_path, monkeypatch):
+        monkeypatch.setattr(cfg, "CONFIG_FILE", tmp_path / "nonexistent.json")
+        assert get_laptop_mode() is False
+
+    def test_true_when_set(self, tmp_path, monkeypatch):
+        f = tmp_path / "config.json"
+        f.write_text(json.dumps({"laptop_mode": True}))
+        monkeypatch.setattr(cfg, "CONFIG_FILE", f)
+        assert get_laptop_mode() is True
+
+    def test_non_bool_value_ignored(self, tmp_path, monkeypatch):
+        f = tmp_path / "config.json"
+        f.write_text(json.dumps({"laptop_mode": "yes"}))
+        monkeypatch.setattr(cfg, "CONFIG_FILE", f)
+        assert get_laptop_mode() is False
