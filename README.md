@@ -91,6 +91,38 @@ The app appears in the **menu bar**. Left-click to open the popup. Right-click f
 
 ---
 
+## Updating
+
+There is no auto-update. To update: pull the latest code, rebuild, and replace the app. **Check for Updates…** in the right-click menu only tells you that a newer release exists.
+
+Downloaded a ZIP instead of cloning? Re-download it (**Code → Download ZIP** on GitHub) and continue from the build step.
+
+### Windows
+
+Quit the app from the tray menu first — the running `.exe` is locked and the build can't overwrite it.
+
+```bat
+git pull
+py -m pip install -r requirements-windows.txt
+py -m PyInstaller app_windows.py --onefile --windowed --name ClaudeTicker
+dist\ClaudeTicker.exe
+```
+
+### macOS
+
+```bash
+git pull
+./build.sh
+osascript -e 'quit app "ClaudeTicker"'
+rm -rf /Applications/ClaudeTicker.app      # installed with sudo? use: sudo rm -rf
+cp -r dist/ClaudeTicker.app /Applications/
+open /Applications/ClaudeTicker.app
+```
+
+Your settings in `~/.config/claude-ticker/config.json` are kept on both platforms.
+
+---
+
 ## Why do you need *yet another ticker*?
 
 Another inevitable Claude session... and you suddenly hit a rate limit.  
